@@ -39,7 +39,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AuthenticateAPI\AuthenticateAPI.csproj" />
-    <ProjectReference Include="..\FluentValidations\FluentValidations.csproj" />
   </ItemGroup>
 
 </Project>
