@@ -1,15 +1,16 @@
-﻿using AuthenticateAPI.Dto.Request;
+﻿using AuthenticateAPI.Models;
 using FluentValidation;
 
-namespace FluentValidations.AuthenticateAPI.Dto.Request;
+namespace AuthenticateAPI.FluentValidations.Models;
 
-public class UpdateUserDtoRequestValidator : AbstractValidator<UpdateUserDtoRequest>
+public class UserValidator : AbstractValidator<User>
 {
-    public UpdateUserDtoRequestValidator()
+    public UserValidator()
     {
         RuleFor(x => x.Name)!.NameRules();
         RuleFor(x => x.LastName)!.LastNameRules();
         RuleFor(x => x.Email)!.EmailRules();
         RuleFor(x => x.PhoneNumber).PhoneNumberRules(x => x.PhoneNumber);
+        RuleFor(x => x.Cpf).CpfRules();
     }
 }

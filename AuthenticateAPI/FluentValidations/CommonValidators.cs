@@ -1,7 +1,7 @@
 ﻿using System.Linq.Expressions;
 using FluentValidation;
 
-namespace FluentValidations.AuthenticateAPI;
+namespace AuthenticateAPI.FluentValidations;
 
 public static class CommonValidators
 {
@@ -32,7 +32,8 @@ public static class CommonValidators
             .WithMessage("Invalid email format.");
     }
 
-    public static void PhoneNumberRules<T>(this IRuleBuilder<T, string?> ruleBuilder, Expression<Func<T, string?>> propertyExpression)
+    public static void PhoneNumberRules<T>(this IRuleBuilder<T, string?> ruleBuilder,
+        Expression<Func<T, string?>> propertyExpression)
     {
         ruleBuilder
             .Matches(@"^\+?[0-9]{1,15}$")

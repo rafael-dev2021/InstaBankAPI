@@ -1,7 +1,7 @@
 ﻿using AuthenticateAPI.Dto.Response;
 using FluentValidation;
 
-namespace FluentValidations.AuthenticateAPI.Dto.Response;
+namespace AuthenticateAPI.FluentValidations.Dto.Response;
 
 public class AuthenticatedDtoResponseValidator : AbstractValidator<AuthenticatedDtoResponse>
 {
