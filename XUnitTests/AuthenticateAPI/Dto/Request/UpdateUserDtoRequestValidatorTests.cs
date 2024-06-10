@@ -25,7 +25,7 @@ public class UpdateUserDtoRequestValidatorTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public void Should_Have_Error_When_Name_Is_Null_Or_Empty(string name)
+    public void Should_Have_Error_When_Name_Is_Null_Or_Empty(string? name)
     {
         // Arrange
         var request = new UpdateUserDtoRequest(name, "Doe", "john.doe@example.com", "+1234567890");
@@ -41,7 +41,7 @@ public class UpdateUserDtoRequestValidatorTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public void Should_Have_Error_When_LastName_Is_Null_Or_Empty(string lastName)
+    public void Should_Have_Error_When_LastName_Is_Null_Or_Empty(string? lastName)
     {
         // Arrange
         var request = new UpdateUserDtoRequest("John", lastName, "john.doe@example.com", "+1234567890");

@@ -30,7 +30,7 @@ public class UserValidatorTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public void Should_Have_Error_When_Name_Is_Null_Or_Empty(string name)
+    public void Should_Have_Error_When_Name_Is_Null_Or_Empty(string? name)
     {
         // Arrange
         var user = new User();
@@ -64,7 +64,7 @@ public class UserValidatorTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public void Should_Have_Error_When_LastName_Is_Null_Or_Empty(string lastName)
+    public void Should_Have_Error_When_LastName_Is_Null_Or_Empty(string? lastName)
     {
         // Arrange
         var user = new User();
@@ -98,7 +98,7 @@ public class UserValidatorTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public void Should_Have_Error_When_Email_Is_Null_Or_Empty(string email)
+    public void Should_Have_Error_When_Email_Is_Null_Or_Empty(string? email)
     {
         // Arrange
         var user = new User();

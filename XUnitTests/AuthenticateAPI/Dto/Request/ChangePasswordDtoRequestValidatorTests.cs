@@ -12,7 +12,7 @@ public class ChangePasswordDtoRequestValidatorTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public void Should_Have_Error_When_Email_Is_Null_Or_Empty(string email)
+    public void Should_Have_Error_When_Email_Is_Null_Or_Empty(string? email)
     {
         // Arrange
         var request = new ChangePasswordDtoRequest(email, "OldPassword123!", "NewPassword123!");
@@ -42,7 +42,7 @@ public class ChangePasswordDtoRequestValidatorTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public void Should_Have_Error_When_OldPassword_Is_Null_Or_Empty(string oldPassword)
+    public void Should_Have_Error_When_OldPassword_Is_Null_Or_Empty(string? oldPassword)
     {
         // Arrange
         var request = new ChangePasswordDtoRequest("test@example.com", oldPassword, "NewPassword123!");
@@ -58,7 +58,7 @@ public class ChangePasswordDtoRequestValidatorTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public void Should_Have_Error_When_NewPassword_Is_Null_Or_Empty(string newPassword)
+    public void Should_Have_Error_When_NewPassword_Is_Null_Or_Empty(string? newPassword)
     {
         // Arrange
         var request = new ChangePasswordDtoRequest("test@example.com", "OldPassword123!", newPassword);
@@ -77,7 +77,7 @@ public class ChangePasswordDtoRequestValidatorTests
     [InlineData("NOLOWERCASE123!")]
     [InlineData("NoSpecialChar123")]
     [InlineData("NoDigit!")]
-    public void Should_Have_Error_When_NewPassword_Is_Invalid(string newPassword)
+    public void Should_Have_Error_When_NewPassword_Is_Invalid(string? newPassword)
     {
         // Arrange
         var request = new ChangePasswordDtoRequest("test@example.com", "OldPassword123!", newPassword);

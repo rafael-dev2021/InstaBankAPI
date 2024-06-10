@@ -25,7 +25,7 @@ public class LoginDtoRequestValidatorTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public void Should_Have_Error_When_Email_Is_Null_Or_Empty(string email)
+    public void Should_Have_Error_When_Email_Is_Null_Or_Empty(string? email)
     {
         // Arrange
         var request = new LoginDtoRequest(email, "ValidPassword123!", true);
@@ -55,7 +55,7 @@ public class LoginDtoRequestValidatorTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public void Should_Have_Error_When_Password_Is_Null_Or_Empty(string password)
+    public void Should_Have_Error_When_Password_Is_Null_Or_Empty(string? password)
     {
         // Arrange
         var request = new LoginDtoRequest("test@example.com", password, true);
