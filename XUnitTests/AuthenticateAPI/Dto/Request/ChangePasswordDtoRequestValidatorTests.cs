@@ -1,7 +1,7 @@
 ﻿using AuthenticateAPI.Dto.Request;
+using AuthenticateAPI.FluentValidations.Dto.Request;
 using FluentAssertions;
 using FluentValidation.TestHelper;
-using FluentValidations.AuthenticateAPI.Dto.Request;
 
 namespace XUnitTests.AuthenticateAPI.Dto.Request;
 

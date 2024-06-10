@@ -1,7 +1,7 @@
-﻿using AuthenticateAPI.Models;
+﻿using AuthenticateAPI.FluentValidations.Models;
+using AuthenticateAPI.Models;
 using FluentAssertions;
 using FluentValidation.TestHelper;
-using FluentValidations.AuthenticateAPI.Models;
 
 namespace XUnitTests.AuthenticateAPI.Models;
 

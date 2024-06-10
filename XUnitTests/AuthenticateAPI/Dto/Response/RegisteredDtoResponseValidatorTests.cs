@@ -1,6 +1,6 @@
 ﻿using AuthenticateAPI.Dto.Response;
+using AuthenticateAPI.FluentValidations.Dto.Response;
 using FluentValidation.TestHelper;
-using FluentValidations.AuthenticateAPI.Dto.Response;
 
 namespace XUnitTests.AuthenticateAPI.Dto.Response;
 
