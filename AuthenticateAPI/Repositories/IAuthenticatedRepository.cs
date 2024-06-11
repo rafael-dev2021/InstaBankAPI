@@ -7,7 +7,7 @@ namespace AuthenticateAPI.Repositories;
 public interface IAuthenticatedRepository
 {
     Task<AuthenticatedDtoResponse> AuthenticateAsync(LoginDtoRequest loginDtoRequest);
-    Task<RegisteredDtoResponse> RegisterAsync(User user);
+    Task<RegisteredDtoResponse> RegisterAsync(User user, string password);
     Task<(bool success, string errorMessage)> UpdateProfileAsync(UpdateUserDtoRequest updateUserDtoRequest);
     Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest changePasswordDtoRequest);
     Task<User> GetUserProfileAsync(string userEmail);
