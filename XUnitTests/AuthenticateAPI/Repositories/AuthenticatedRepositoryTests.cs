@@ -46,11 +46,11 @@ public class AuthenticatedRepositoryTests
 
             var expectedResult = new RegisteredDtoResponse(true, "");
 
-            _authenticatedRepositoryMock.Setup(repo => repo.RegisterAsync(user))
+            _authenticatedRepositoryMock.Setup(repo => repo.RegisterAsync(user,string.Empty))
                 .ReturnsAsync(expectedResult);
 
             // Act
-            var result = await _authenticatedRepositoryMock.Object.RegisterAsync(user);
+            var result = await _authenticatedRepositoryMock.Object.RegisterAsync(user,string.Empty);
 
             // Assert
             result.Should().BeEquivalentTo(expectedResult);
