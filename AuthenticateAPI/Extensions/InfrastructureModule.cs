@@ -6,6 +6,7 @@ public static class InfrastructureModule
     {
         service.AddDatabaseDependencyInjection(configuration);
         service.AddFluentValidationDependencyInjection();
+        service.AddDependencyInjectionRepositories();
 
         return service;
     }
