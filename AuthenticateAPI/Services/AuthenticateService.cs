@@ -30,7 +30,7 @@ public class AuthenticateService(IAuthenticatedRepository repository, TokenServi
             throw new UnauthorizedAccessException(register.Message);
         }
 
-        var user = await repository.GetUserProfileAsync(request.Email);
+        var user = await repository.GetUserProfileAsync(request.Email!);
         var token = tokenService.GenerateAccessToken(user);
         var refreshToken = tokenService.GenerateRefreshToken(user);
 
