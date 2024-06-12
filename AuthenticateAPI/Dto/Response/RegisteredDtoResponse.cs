@@ -1,3 +1,3 @@
 ﻿namespace AuthenticateAPI.Dto.Response;
 
-public record RegisteredDtoResponse(bool IsRegistered, string ErrorMessage) { }
+public record RegisteredDtoResponse(bool Success, string Message) { }
