@@ -1,3 +1,3 @@
 namespace AuthenticateAPI.Dto.Response;
 
-public record TokenDtoResponse(string token, string refreshToken) { }
+public record TokenDtoResponse(string Token, string RefreshToken) { }
