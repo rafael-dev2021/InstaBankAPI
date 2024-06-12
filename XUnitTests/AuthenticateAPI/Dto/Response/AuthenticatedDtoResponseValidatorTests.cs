@@ -18,7 +18,7 @@ public class AuthenticatedDtoResponseValidatorTests
         var validationResult = _validator.TestValidate(result);
 
         // Assert
-        validationResult.ShouldNotHaveValidationErrorFor(x => x.ErrorMessage);
+        validationResult.ShouldNotHaveValidationErrorFor(x => x.Message);
     }
 
     [Fact]
@@ -31,7 +31,7 @@ public class AuthenticatedDtoResponseValidatorTests
         var validationResult = _validator.TestValidate(result);
 
         // Assert
-        validationResult.ShouldNotHaveValidationErrorFor(x => x.ErrorMessage);
+        validationResult.ShouldNotHaveValidationErrorFor(x => x.Message);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class AuthenticatedDtoResponseValidatorTests
         var validationResult = _validator.TestValidate(result);
 
         // Assert
-        validationResult.ShouldHaveValidationErrorFor(x => x.ErrorMessage)
+        validationResult.ShouldHaveValidationErrorFor(x => x.Message)
             .WithErrorMessage("Login successful.");
     }
 
@@ -58,7 +58,7 @@ public class AuthenticatedDtoResponseValidatorTests
         var validationResult = _validator.TestValidate(result);
 
         // Assert
-        validationResult.ShouldHaveValidationErrorFor(x => x.ErrorMessage)
+        validationResult.ShouldHaveValidationErrorFor(x => x.Message)
             .WithErrorMessage("Invalid email or password. Please try again.");
     }
 }

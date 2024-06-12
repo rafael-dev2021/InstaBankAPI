@@ -37,20 +37,22 @@ public class AuthenticatedRepositoryTests
         public async Task RegisterAsync_Should_Return_Registered_Result()
         {
             // Arrange
-            var user = new User();
-            user.SetName("John");
-            user.SetLastName("Doe");
-            user.SetEmail("john.doe@example.com");
-            user.SetPhoneNumber("+1234567890");
-            user.SetCpf("123.456.789-10");
+            var user = new RegisterDtoRequest(
+                "John",
+                "Doe",
+                "+1234567890",
+                "123.456.789-10",
+                "john@example.com",
+                "123456789",
+                "123456789");
 
             var expectedResult = new RegisteredDtoResponse(true, "");
 
-            _authenticatedRepositoryMock.Setup(repo => repo.RegisterAsync(user,string.Empty))
+            _authenticatedRepositoryMock.Setup(repo => repo.RegisterAsync(user))
                 .ReturnsAsync(expectedResult);
 
             // Act
-            var result = await _authenticatedRepositoryMock.Object.RegisterAsync(user,string.Empty);
+            var result = await _authenticatedRepositoryMock.Object.RegisterAsync(user);
 
             // Assert
             result.Should().BeEquivalentTo(expectedResult);
