@@ -1,6 +1,7 @@
 ﻿using AuthenticateAPI.Context;
 using AuthenticateAPI.Models;
 using AuthenticateAPI.Repositories;
+using AuthenticateAPI.Repositories.Strategies;
 using Microsoft.AspNetCore.Identity;
 
 namespace AuthenticateAPI.Extensions;
@@ -11,6 +12,8 @@ public static class DependencyInjectionRepositories
     {
         service.AddScoped<IAuthenticatedRepository, AuthenticatedRepository>();
         service.AddScoped<IUserRoleRepository, UserRoleRepository>();
+        service.AddScoped<IAuthenticatedStrategy, AuthenticatedStrategy>();
+        service.AddScoped<IRegisterStrategy, RegisterStrategy>();
         service.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
         service.AddDistributedMemoryCache();
