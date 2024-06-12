@@ -1,3 +1,4 @@
+using AuthenticateAPI.Endpoints;
 using AuthenticateAPI.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +18,10 @@ if (app.Environment.IsDevelopment())
 await UserRolesData.AddUserRolesDataAsync(app);
 
 app.UseHttpsRedirection();
+app.UseRouting();
+app.UseAuthentication();
+
+app.MapAuthenticateEndpoints();
 
 app.Run();
 
