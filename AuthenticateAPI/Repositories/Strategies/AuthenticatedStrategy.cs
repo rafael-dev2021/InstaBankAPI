@@ -16,11 +16,11 @@ public class AuthenticatedStrategy(SignInManager<User> signInManager)
         {
             { r => r.Succeeded, "Login successful." },
             { r => r.IsLockedOut, "Your account is locked. Please contact support." },
-            { r => true, "Invalid email or password. Please try again." }
+            { _ => true, "Invalid email or password. Please try again." }
         };
 
-        var errorMessage = errorMessages.First(kv => kv.Key(result)).Value;
+        var message = errorMessages.First(kv => kv.Key(result)).Value;
 
-        return new AuthenticatedDtoResponse(result.Succeeded, errorMessage);
+        return new AuthenticatedDtoResponse(result.Succeeded, message);
     }
 }

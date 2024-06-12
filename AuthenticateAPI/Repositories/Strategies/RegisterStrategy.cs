@@ -1,4 +1,5 @@
 ﻿using AuthenticateAPI.Context;
+using AuthenticateAPI.Dto.Request;
 using AuthenticateAPI.Dto.Response;
 using AuthenticateAPI.Models;
 using Microsoft.AspNetCore.Identity;
@@ -42,9 +43,14 @@ public class RegisterStrategy(
         return validationErrors;
     }
 
-    public async Task<RegisteredDtoResponse> CreateUserAsync(User user, string password)
+    public async Task<RegisteredDtoResponse> CreateUserAsync(RegisterDtoRequest request)
     {
-        var validationErrors = await ValidateAsync(user.Cpf, user.Email, user.PhoneNumber);
+        if (request.Password != request.ConfirmPassword)
+        {
+            return new RegisteredDtoResponse(false, "Password and confirm password do not match.");
+        }
+        
+        var validationErrors = await ValidateAsync(request.Cpf, request.Email, request.PhoneNumber);
 
         if (validationErrors.Count > 0)
         {
@@ -53,15 +59,15 @@ public class RegisterStrategy(
 
         var appUser = new User
         {
-            Email = user.Email,
-            UserName = user.Email,
-            PhoneNumber = user.PhoneNumber
+            Email = request.Email,
+            UserName = request.Email,
+            PhoneNumber = request.PhoneNumber
         };
-        appUser.SetName(user.Name);
-        appUser.SetLastName(user.LastName);
-        appUser.SetCpf(user.Cpf);
+        appUser.SetName(request.Name);
+        appUser.SetLastName(request.LastName);
+        appUser.SetCpf(request.Cpf);
 
-        var result = await userManager.CreateAsync(appUser, password);
+        var result = await userManager.CreateAsync(appUser, request.Password);
 
         if (!result.Succeeded) return new RegisteredDtoResponse(false, "Registration failed.");
 
