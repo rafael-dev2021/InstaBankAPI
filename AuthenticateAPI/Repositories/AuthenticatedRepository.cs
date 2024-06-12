@@ -26,12 +26,12 @@ public class AuthenticatedRepository(
         return await _authenticationStrategy.AuthenticatedAsync(loginDtoRequest);
     }
 
-    public async Task<RegisteredDtoResponse> RegisterAsync(User user, string password)
+    public async Task<RegisteredDtoResponse> RegisterAsync(RegisterDtoRequest request)
     {
-        var validationErrors = await _registerStrategy.ValidateAsync(user.Cpf, user.Email, user.PhoneNumber);
+        var validationErrors = await _registerStrategy.ValidateAsync(request.Cpf, request.Email, request.PhoneNumber);
 
         if (validationErrors.Count == 0)
-            return await _registerStrategy.CreateUserAsync(user, password);
+            return await _registerStrategy.CreateUserAsync(request);
 
         var errorMessage = string.Join(Environment.NewLine, validationErrors);
         return new RegisteredDtoResponse(false, errorMessage);
@@ -48,9 +48,17 @@ public class AuthenticatedRepository(
         throw new NotImplementedException();
     }
 
-    public Task<User> GetUserProfileAsync(string userEmail)
+    public async Task<User> GetUserProfileAsync(string userEmail)
     {
-        throw new NotImplementedException();
+        var user = await userManager.FindByEmailAsync(userEmail);
+
+        var userProfile = new User();
+        userProfile.SetName(user?.Name);
+        userProfile.SetLastName(user?.LastName);
+        userProfile.SetEmail(user?.Email);
+        userProfile.SetPhoneNumber(user?.PhoneNumber!);
+
+        return userProfile;
     }
 
     public Task<bool> ForgotPasswordAsync(string email, string newPassWord)
