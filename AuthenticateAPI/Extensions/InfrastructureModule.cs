@@ -2,12 +2,11 @@
 
 public static class InfrastructureModule
 {
-    public static IServiceCollection AddInfrastructureModule(this IServiceCollection service, IConfiguration configuration)
+    public static void AddInfrastructureModule(this IServiceCollection service, IConfiguration configuration)
     {
         service.AddDatabaseDependencyInjection(configuration);
         service.AddFluentValidationDependencyInjection();
         service.AddDependencyInjectionRepositories();
-
-        return service;
+        service.AddDependencyInjectionJwt(configuration);
     }
 }

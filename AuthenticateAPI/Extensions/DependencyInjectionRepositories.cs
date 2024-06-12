@@ -7,7 +7,7 @@ namespace AuthenticateAPI.Extensions;
 
 public static class DependencyInjectionRepositories
 {
-    public static IServiceCollection AddDependencyInjectionRepositories(this IServiceCollection service)
+    public static void AddDependencyInjectionRepositories(this IServiceCollection service)
     {
         service.AddScoped<IAuthenticatedRepository, AuthenticatedRepository>();
         service.AddScoped<IUserRoleRepository, UserRoleRepository>();
@@ -78,7 +78,5 @@ public static class DependencyInjectionRepositories
             options.SlidingExpiration = true;
             options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
         });
-
-        return service;
     }
 }

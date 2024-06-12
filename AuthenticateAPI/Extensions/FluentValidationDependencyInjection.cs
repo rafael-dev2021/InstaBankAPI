@@ -5,12 +5,13 @@ using AuthenticateAPI.FluentValidations.Dto.Response;
 using AuthenticateAPI.FluentValidations.Models;
 using AuthenticateAPI.Models;
 using FluentValidation;
+using FluentValidation.AspNetCore;
 
 namespace AuthenticateAPI.Extensions;
 
 public static class FluentValidationDependencyInjection
 {
-    public static IServiceCollection AddFluentValidationDependencyInjection(this IServiceCollection service)
+    public static void AddFluentValidationDependencyInjection(this IServiceCollection service)
     {
         service.AddValidatorsFromAssemblyContaining<ChangePasswordDtoRequestValidator>();
         service.AddScoped<IValidator<ChangePasswordDtoRequest>, ChangePasswordDtoRequestValidator>();
@@ -29,7 +30,11 @@ public static class FluentValidationDependencyInjection
 
         service.AddValidatorsFromAssemblyContaining<UserValidator>();
         service.AddScoped<IValidator<User>, UserValidator>();
-
-        return service;
+        
+        service.AddValidatorsFromAssemblyContaining<RegisterDtoRequestValidator>();
+        service.AddScoped<IValidator<RegisterDtoRequest>, RegisterDtoRequestValidator>();
+        
+        service.AddFluentValidationAutoValidation();
+        service.AddFluentValidationClientsideAdapters();
     }
 }
