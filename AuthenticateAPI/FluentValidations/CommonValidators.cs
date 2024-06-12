@@ -36,9 +36,13 @@ public static class CommonValidators
         Expression<Func<T, string?>> propertyExpression)
     {
         ruleBuilder
+            .NotEmpty()
+            .WithMessage("Phone number is required.")
             .Matches(@"^\+?[0-9]{1,15}$")
             .WithMessage("Invalid phone number format.")
-            .When(x => !string.IsNullOrWhiteSpace(propertyExpression.Compile()(x)));
+            .When(x => !string.IsNullOrWhiteSpace(propertyExpression.Compile()(x)))
+            .Length(9,15)
+            .WithMessage("Phone number must be between 9 and 15 characters.");
     }
 
     public static void CpfRules<T>(this IRuleBuilder<T, string> ruleBuilder)
