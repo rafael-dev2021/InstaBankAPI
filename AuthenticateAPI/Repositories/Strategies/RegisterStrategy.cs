@@ -10,7 +10,7 @@ namespace AuthenticateAPI.Repositories.Strategies;
 public class RegisterStrategy(
     SignInManager<User> signInManager,
     UserManager<User> userManager,
-    AppDbContext appDbContext)
+    AppDbContext appDbContext) : IRegisterStrategy
 {
     private async Task<bool> IsCpfAlreadyUsed(string cpf) =>
         await appDbContext.Users.FirstOrDefaultAsync(x => x.Cpf == cpf) != null;

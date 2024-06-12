@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace AuthenticateAPI.Repositories.Strategies;
 
-public class AuthenticatedStrategy(SignInManager<User> signInManager)
+public class AuthenticatedStrategy(SignInManager<User> signInManager) : IAuthenticatedStrategy
 {
     public async Task<AuthenticatedDtoResponse> AuthenticatedAsync(LoginDtoRequest request)
     {
