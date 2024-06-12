@@ -7,12 +7,12 @@ public class RegisteredDtoResponseValidator : AbstractValidator<RegisteredDtoRes
 {
     public RegisteredDtoResponseValidator()
     {
-        RuleFor(x => x.ErrorMessage)
+        RuleFor(x => x.Message)
             .NotEmpty().WithMessage("Registration failed.")
-            .When(x => !x.IsRegistered);
+            .When(x => !x.Success);
 
-        RuleFor(x => x.ErrorMessage)
+        RuleFor(x => x.Message)
             .Empty().WithMessage("Registration successful.")
-            .When(x => x.IsRegistered);
+            .When(x => x.Success);
     }
 }

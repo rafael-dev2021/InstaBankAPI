@@ -7,16 +7,16 @@ public class AuthenticatedDtoResponseValidator : AbstractValidator<Authenticated
 {
     public AuthenticatedDtoResponseValidator()
     {
-        RuleFor(x => x.IsAuthenticated)
+        RuleFor(x => x.Success)
             .Must(_ => true)
             .WithMessage("Invalid authentication state.");
 
-        RuleFor(x => x.ErrorMessage)
+        RuleFor(x => x.Message)
             .NotEmpty().WithMessage("Invalid email or password. Please try again.")
-            .When(x => !x.IsAuthenticated);
+            .When(x => !x.Success);
 
-        RuleFor(x => x.ErrorMessage)
+        RuleFor(x => x.Message)
             .Empty().WithMessage("Login successful.")
-            .When(x => x.IsAuthenticated);
+            .When(x => x.Success);
     }
 }
