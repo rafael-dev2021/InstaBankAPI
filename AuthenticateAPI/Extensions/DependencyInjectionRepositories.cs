@@ -14,6 +14,7 @@ public static class DependencyInjectionRepositories
         service.AddScoped<IUserRoleRepository, UserRoleRepository>();
         service.AddScoped<IAuthenticatedStrategy, AuthenticatedStrategy>();
         service.AddScoped<IRegisterStrategy, RegisterStrategy>();
+        service.AddScoped<IUpdateProfileStrategy, UpdateProfileStrategy>();
         service.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
         service.AddDistributedMemoryCache();

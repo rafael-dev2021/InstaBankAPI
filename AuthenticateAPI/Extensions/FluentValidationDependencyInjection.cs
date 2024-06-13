@@ -34,6 +34,9 @@ public static class FluentValidationDependencyInjection
         service.AddValidatorsFromAssemblyContaining<RegisterDtoRequestValidator>();
         service.AddScoped<IValidator<RegisterDtoRequest>, RegisterDtoRequestValidator>();
         
+        service.AddValidatorsFromAssemblyContaining<UpdatedDtoResponseValidator>();
+        service.AddScoped<IValidator<UpdatedDtoResponse>, UpdatedDtoResponseValidator>();
+        
         service.AddValidatorsFromAssemblyContaining<TokenDtoResponseValidator>();
         
         service.AddFluentValidationAutoValidation();
