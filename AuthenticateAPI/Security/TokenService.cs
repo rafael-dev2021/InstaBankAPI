@@ -2,11 +2,12 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using AuthenticateAPI.Models;
+using AuthenticateAPI.Services;
 using Microsoft.IdentityModel.Tokens;
 
 namespace AuthenticateAPI.Security;
 
-public class TokenService(IConfiguration configuration)
+public class TokenService(IConfiguration configuration) : ITokenService
 {
     public string GenerateToken(User user, int expirationToken)
     {
@@ -36,7 +37,7 @@ public class TokenService(IConfiguration configuration)
         var expirationToken = int.Parse(configuration["Jwt:ExpirationTokenMinutes"] ?? string.Empty);
         return GenerateToken(user, expirationToken);
     }
-    
+
     public string GenerateRefreshToken(User user)
     {
         var expirationToken = int.Parse(configuration["Jwt:RefreshTokenExpirationMinutes"] ?? string.Empty);
@@ -45,7 +46,7 @@ public class TokenService(IConfiguration configuration)
 
     public ClaimsPrincipal? ValidateToken(string token)
     {
-        var key = Encoding.ASCII.GetBytes(configuration["Jwt:Key"] ?? string.Empty);
+        var key = Encoding.ASCII.GetBytes(configuration["Jwt:SecretKey"] ?? string.Empty);
         var tokenHandler = new JwtSecurityTokenHandler();
         var validationParameters = new TokenValidationParameters
         {
