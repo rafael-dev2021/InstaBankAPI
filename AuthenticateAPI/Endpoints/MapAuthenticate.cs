@@ -14,14 +14,12 @@ public static class MapAuthenticate
             async (
                 [FromServices] AuthenticateService service,
                 [FromBody] LoginDtoRequest request,
-                HttpContext httpContext) =>
+                IValidator<LoginDtoRequest> validator) =>
             {
-                var validator = httpContext.RequestServices.GetRequiredService<IValidator<LoginDtoRequest>>();
-                var validationResult = await validator.ValidateAsync(request);
-                if (!validationResult.IsValid)
+                var validationResult = await ValidateAsync(request, validator);
+                if (validationResult != null)
                 {
-                    var errors = validationResult.Errors.Select(e => e.ErrorMessage);
-                    return Results.BadRequest(errors);
+                    return validationResult;
                 }
 
                 try
@@ -36,14 +34,15 @@ public static class MapAuthenticate
             });
 
         app.MapPost("/v1/auth/register",
-            async (AuthenticateService service, RegisterDtoRequest request, HttpContext httpContext) =>
+            async (
+                [FromServices] AuthenticateService service,
+                [FromBody] RegisterDtoRequest request,
+                IValidator<RegisterDtoRequest> validator) =>
             {
-                var validator = httpContext.RequestServices.GetRequiredService<IValidator<RegisterDtoRequest>>();
-                var validationResult = await validator.ValidateAsync(request);
-                if (!validationResult.IsValid)
+                var validationResult = await ValidateAsync(request, validator);
+                if (validationResult != null)
                 {
-                    var errors = validationResult.Errors.Select(e => e.ErrorMessage);
-                    return Results.BadRequest(errors);
+                    return validationResult;
                 }
 
                 try
@@ -57,20 +56,18 @@ public static class MapAuthenticate
                     return Results.Json(new { ex.Message }, statusCode: 400);
                 }
             });
-        
+
         app.MapPut("/v1/auth/update-profile",
             [Authorize] async (
                 [FromServices] AuthenticateService service,
                 [FromBody] UpdateUserDtoRequest request,
                 [FromQuery] string userId,
-                HttpContext httpContext) =>
+                IValidator<UpdateUserDtoRequest> validator) =>
             {
-                var validator = httpContext.RequestServices.GetRequiredService<IValidator<UpdateUserDtoRequest>>();
-                var validationResult = await validator.ValidateAsync(request);
-                if (!validationResult.IsValid)
+                var validationResult = await ValidateAsync(request, validator);
+                if (validationResult != null)
                 {
-                    var errors = validationResult.Errors.Select(e => e.ErrorMessage);
-                    return Results.BadRequest(errors);
+                    return validationResult;
                 }
 
                 try
@@ -83,5 +80,34 @@ public static class MapAuthenticate
                     return Results.Json(new { ex.Message }, statusCode: 400);
                 }
             });
+
+        app.MapPost("/v1/auth/change-password",
+            [Authorize] async (
+                [FromServices] AuthenticateService service,
+                [FromBody] ChangePasswordDtoRequest request,
+                IValidator<ChangePasswordDtoRequest> validator) =>
+            {
+                var validationResult = await ValidateAsync(request, validator);
+                if (validationResult != null)
+                {
+                    return validationResult;
+                }
+
+                try
+                {
+                    var response = await service.ChangePasswordAsync(request);
+                    return Results.Ok(response);
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    return Results.Json(new { ex.Message }, statusCode: 400);
+                }
+            });
+    }
+
+    private static async Task<IResult?> ValidateAsync<T>(T request, IValidator<T> validator)
+    {
+        var result = await validator.ValidateAsync(request);
+        return !result.IsValid ? Results.ValidationProblem(result.ToDictionary()) : null;
     }
 }
