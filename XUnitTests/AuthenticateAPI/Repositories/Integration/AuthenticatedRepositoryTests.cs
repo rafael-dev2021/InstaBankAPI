@@ -15,12 +15,15 @@ public class AuthenticatedRepositoryTests
     private readonly Mock<IAuthenticatedStrategy> _authenticatedStrategyMock;
     private readonly AuthenticatedRepository _authenticatedRepository;
     private readonly Mock<IRegisterStrategy> _registerStrategyMock;
+    private readonly Mock<IUpdateProfileStrategy> _updateProfileStrategyMock;
 
 
     protected AuthenticatedRepositoryTests()
     {
         _registerStrategyMock = new Mock<IRegisterStrategy>();
         _authenticatedStrategyMock = new Mock<IAuthenticatedStrategy>();
+        _updateProfileStrategyMock = new Mock<IUpdateProfileStrategy>();
+
 
         var userStoreMock = new Mock<IUserStore<User>>();
         var userManagerMock =
@@ -39,7 +42,8 @@ public class AuthenticatedRepositoryTests
             signInManagerMock.Object,
             userManagerMock.Object,
             _authenticatedStrategyMock.Object,
-            _registerStrategyMock.Object
+            _registerStrategyMock.Object,
+            _updateProfileStrategyMock.Object
         );
     }
 
@@ -134,6 +138,50 @@ public class AuthenticatedRepositoryTests
             response.Should().BeEquivalentTo(expectedResponse);
             _registerStrategyMock.Verify(s => s.ValidateAsync(request.Cpf, request.Email, request.PhoneNumber), Times.Once);
             _registerStrategyMock.Verify(s => s.CreateUserAsync(It.IsAny<RegisterDtoRequest>()), Times.Never);
+        }
+    }
+    
+     public class UpdateProfileAsyncTests : AuthenticatedRepositoryTests
+    {
+        [Fact(DisplayName = "UpdateProfileAsync should return success response when profile update is successful")]
+        public async Task UpdateProfileAsync_Should_Return_Success_Response()
+        {
+            // Arrange
+            const string userId = "12345";
+            var request = new UpdateUserDtoRequest("NewName", "NewLastName", "new.email@example.com", "+1234567890");
+            var expectedResponse = new UpdatedDtoResponse(true, "Profile updated successfully.");
+
+            _updateProfileStrategyMock
+                .Setup(s => s.UpdateProfileAsync(request, userId))
+                .ReturnsAsync(expectedResponse);
+
+            // Act
+            var response = await _authenticatedRepository.UpdateProfileAsync(request, userId);
+
+            // Assert
+            response.Should().BeEquivalentTo(expectedResponse);
+            _updateProfileStrategyMock.Verify(s => s.UpdateProfileAsync(request, userId), Times.Once);
+        }
+
+        [Fact(DisplayName = "UpdateProfileAsync should return error response when profile update fails")]
+        public async Task UpdateProfileAsync_Should_Return_Error_Response()
+        {
+            // Arrange
+            const string userId = "12345";
+            var request = new UpdateUserDtoRequest("NewName", "NewLastName", "new.email@example.com", "+1234567890");
+            var validationErrors = new List<string> { "Email already used by another user." };
+            var expectedResponse = new UpdatedDtoResponse(false, string.Join(Environment.NewLine, validationErrors));
+
+            _updateProfileStrategyMock
+                .Setup(s => s.UpdateProfileAsync(request, userId))
+                .ReturnsAsync(expectedResponse);
+
+            // Act
+            var response = await _authenticatedRepository.UpdateProfileAsync(request, userId);
+
+            // Assert
+            response.Should().BeEquivalentTo(expectedResponse);
+            _updateProfileStrategyMock.Verify(s => s.UpdateProfileAsync(request, userId), Times.Once);
         }
     }
 }

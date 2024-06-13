@@ -66,13 +66,13 @@ public class AuthenticatedRepositoryTests
         {
             // Arrange
             var updateUserDtoRequest = new UpdateUserDtoRequest("John", "Doe", "john.doe@example.com", "+1234567890");
-            var expectedResult = (success: true, errorMessage: "");
+            var expectedResult = new UpdatedDtoResponse(true, "");
 
-            _authenticatedRepositoryMock.Setup(repo => repo.UpdateProfileAsync(updateUserDtoRequest))
+            _authenticatedRepositoryMock.Setup(repo => repo.UpdateProfileAsync(updateUserDtoRequest,"1"))
                 .ReturnsAsync(expectedResult);
 
             // Act
-            var result = await _authenticatedRepositoryMock.Object.UpdateProfileAsync(updateUserDtoRequest);
+            var result = await _authenticatedRepositoryMock.Object.UpdateProfileAsync(updateUserDtoRequest,"1");
 
             // Assert
             result.Should().BeEquivalentTo(expectedResult);
@@ -83,13 +83,13 @@ public class AuthenticatedRepositoryTests
         {
             // Arrange
             var updateUserDtoRequest = new UpdateUserDtoRequest("John", "Doe", "john.doe@example.com", "+1234567890");
-            var expectedResult = (success: false, errorMessage: "Failed to update profile");
+            var expectedResult =new UpdatedDtoResponse(true, "Failed to update profile");
 
-            _authenticatedRepositoryMock.Setup(repo => repo.UpdateProfileAsync(updateUserDtoRequest))
+            _authenticatedRepositoryMock.Setup(repo => repo.UpdateProfileAsync(updateUserDtoRequest,"1"))
                 .ReturnsAsync(expectedResult);
 
             // Act
-            var result = await _authenticatedRepositoryMock.Object.UpdateProfileAsync(updateUserDtoRequest);
+            var result = await _authenticatedRepositoryMock.Object.UpdateProfileAsync(updateUserDtoRequest,"1");
 
             // Assert
             result.Should().BeEquivalentTo(expectedResult);
