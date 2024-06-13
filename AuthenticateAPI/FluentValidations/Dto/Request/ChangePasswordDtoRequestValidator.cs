@@ -13,9 +13,9 @@ public class ChangePasswordDtoRequestValidator : AbstractValidator<ChangePasswor
             .EmailAddress()
             .WithMessage("Invalid email format.");
 
-        RuleFor(x => x.OldPassword)
+        RuleFor(x => x.CurrentPassword)
             .NotEmpty()
-            .WithMessage("Old password is required.");
+            .WithMessage("Current password is required.");
 
         RuleFor(x => x.NewPassword)
             .NotEmpty()
@@ -23,7 +23,7 @@ public class ChangePasswordDtoRequestValidator : AbstractValidator<ChangePasswor
             .Matches(@"^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\S+$).{10,30}$")
             .WithMessage(
                 "Password must be between 10 and 30 characters, and include at least one digit, one lowercase letter, one uppercase letter, and one special character.")
-            .NotEqual(x => x.OldPassword)
+            .NotEqual(x => x.CurrentPassword)
             .WithMessage("New password must be different from old password.");
     }
 }
