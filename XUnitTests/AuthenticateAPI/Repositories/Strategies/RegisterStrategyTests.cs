@@ -182,5 +182,6 @@ public class RegisterStrategyTests : IDisposable
     {
         _appDbContext.Database.EnsureDeleted();
         _appDbContext.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
