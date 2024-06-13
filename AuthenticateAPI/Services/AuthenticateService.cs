@@ -36,4 +36,19 @@ public class AuthenticateService(IAuthenticatedRepository repository, TokenServi
 
         return new TokenDtoResponse(token, refreshToken);
     }
+    
+    public async Task<TokenDtoResponse> UpdateProfileAsync(UpdateUserDtoRequest request, string userId)
+    {
+        var update = await repository.UpdateProfileAsync(request, userId);
+        if (!update.Success)
+        {
+            throw new UnauthorizedAccessException(update.Message);
+        }
+
+        var user = await repository.GetUserProfileAsync(request.Email!);
+        var token = tokenService.GenerateAccessToken(user);
+        var refreshToken = tokenService.GenerateRefreshToken(user);
+
+        return new TokenDtoResponse(token, refreshToken);
+    }
 }
