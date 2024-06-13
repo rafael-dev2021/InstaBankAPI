@@ -1,11 +1,10 @@
 using AuthenticateAPI.Dto.Request;
 using AuthenticateAPI.Dto.Response;
 using AuthenticateAPI.Repositories;
-using AuthenticateAPI.Security;
 
 namespace AuthenticateAPI.Services;
 
-public class AuthenticateService(IAuthenticatedRepository repository, TokenService tokenService)
+public class AuthenticateService(IAuthenticatedRepository repository, ITokenService tokenService)
 {
     public async Task<TokenDtoResponse> LoginAsync(LoginDtoRequest request)
     {
@@ -16,12 +15,12 @@ public class AuthenticateService(IAuthenticatedRepository repository, TokenServi
         }
 
         var user = await repository.GetUserProfileAsync(request.Email!);
-        var token = tokenService.GenerateAccessToken(user);
-        var refreshToken = tokenService.GenerateRefreshToken(user);
+        var token = tokenService.GenerateAccessToken(user!);
+        var refreshToken = tokenService.GenerateRefreshToken(user!);
 
         return new TokenDtoResponse(token, refreshToken);
     }
-    
+
     public async Task<TokenDtoResponse> RegisterAsync(RegisterDtoRequest request)
     {
         var register = await repository.RegisterAsync(request);
@@ -31,13 +30,13 @@ public class AuthenticateService(IAuthenticatedRepository repository, TokenServi
         }
 
         var user = await repository.GetUserProfileAsync(request.Email!);
-        var token = tokenService.GenerateAccessToken(user);
-        var refreshToken = tokenService.GenerateRefreshToken(user);
+        var token = tokenService.GenerateAccessToken(user!);
+        var refreshToken = tokenService.GenerateRefreshToken(user!);
 
         return new TokenDtoResponse(token, refreshToken);
     }
-    
-    public async Task<TokenDtoResponse> UpdateProfileAsync(UpdateUserDtoRequest request, string userId)
+
+    public async Task<TokenDtoResponse> UpdateAsync(UpdateUserDtoRequest request, string userId)
     {
         var update = await repository.UpdateProfileAsync(request, userId);
         if (!update.Success)
@@ -46,9 +45,14 @@ public class AuthenticateService(IAuthenticatedRepository repository, TokenServi
         }
 
         var user = await repository.GetUserProfileAsync(request.Email!);
-        var token = tokenService.GenerateAccessToken(user);
-        var refreshToken = tokenService.GenerateRefreshToken(user);
+        var token = tokenService.GenerateAccessToken(user!);
+        var refreshToken = tokenService.GenerateRefreshToken(user!);
 
         return new TokenDtoResponse(token, refreshToken);
+    }
+
+    public async Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest request)
+    {
+        return await repository.ChangePasswordAsync(request);
     }
 }
