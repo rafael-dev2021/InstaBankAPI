@@ -10,7 +10,8 @@ public class AuthenticatedRepository(
     SignInManager<User> signInManager,
     UserManager<User> userManager,
     IAuthenticatedStrategy authenticatedStrategy,
-    IRegisterStrategy registerStrategy) :
+    IRegisterStrategy registerStrategy,
+    IUpdateProfileStrategy updateProfileStrategy) :
     IAuthenticatedRepository
 {
     public async Task<AuthenticatedDtoResponse> AuthenticateAsync(LoginDtoRequest loginDtoRequest)
@@ -29,9 +30,9 @@ public class AuthenticatedRepository(
         return new RegisteredDtoResponse(false, errorMessage);
     }
 
-    public Task<(bool success, string errorMessage)> UpdateProfileAsync(UpdateUserDtoRequest updateUserDtoRequest)
+    public async Task<UpdatedDtoResponse> UpdateProfileAsync(UpdateUserDtoRequest updateUserDtoRequest, string userId)
     {
-        throw new NotImplementedException();
+        return await updateProfileStrategy.UpdateProfileAsync(updateUserDtoRequest, userId);
     }
 
     public Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest changePasswordDtoRequest)
@@ -51,7 +52,7 @@ public class AuthenticatedRepository(
 
         return userProfile;
     }
-
+    
     public Task<bool> ForgotPasswordAsync(string email, string newPassWord)
     {
         throw new NotImplementedException();
