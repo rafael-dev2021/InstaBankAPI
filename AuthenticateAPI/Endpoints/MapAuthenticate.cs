@@ -72,7 +72,7 @@ public static class MapAuthenticate
 
                 try
                 {
-                    var response = await service.UpdateProfileAsync(request, userId);
+                    var response = await service.UpdateAsync(request, userId);
                     return Results.Ok(response);
                 }
                 catch (UnauthorizedAccessException ex)
