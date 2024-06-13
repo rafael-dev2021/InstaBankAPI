@@ -20,6 +20,7 @@ await UserRolesData.AddUserRolesDataAsync(app);
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapAuthenticateEndpoints();
 
