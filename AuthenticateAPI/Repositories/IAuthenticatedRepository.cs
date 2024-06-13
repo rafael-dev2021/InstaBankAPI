@@ -10,7 +10,7 @@ public interface IAuthenticatedRepository
     Task<RegisteredDtoResponse> RegisterAsync(RegisterDtoRequest request);
     Task<UpdatedDtoResponse> UpdateProfileAsync(UpdateUserDtoRequest updateUserDtoRequest, string userId);
     Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest changePasswordDtoRequest);
-    Task<User> GetUserProfileAsync(string userEmail);
-    Task<bool> ForgotPasswordAsync(string email, string newPassWord);
+    Task<User?> GetUserProfileAsync(string userEmail);
+    Task<bool> ForgotPasswordAsync(string email, string newPassword);
     Task LogoutAsync();
 }

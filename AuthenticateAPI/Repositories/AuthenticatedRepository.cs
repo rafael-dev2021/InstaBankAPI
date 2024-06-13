@@ -35,27 +35,39 @@ public class AuthenticatedRepository(
         return await updateProfileStrategy.UpdateProfileAsync(updateUserDtoRequest, userId);
     }
 
-    public Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest changePasswordDtoRequest)
+    public async Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest request)
     {
-        throw new NotImplementedException();
+        var user = await userManager.FindByEmailAsync(request.Email!);
+        if (user == null) return false;
+        var changePasswordResult =
+            await userManager.ChangePasswordAsync(user, request.CurrentPassword!, request.NewPassword!);
+
+        return changePasswordResult.Succeeded;
     }
 
-    public async Task<User> GetUserProfileAsync(string userEmail)
+    public async Task<User?> GetUserProfileAsync(string userEmail)
     {
         var user = await userManager.FindByEmailAsync(userEmail);
+        if (user == null) return null;
 
         var userProfile = new User();
-        userProfile.SetName(user?.Name);
-        userProfile.SetLastName(user?.LastName);
-        userProfile.SetEmail(user?.Email);
-        userProfile.SetPhoneNumber(user?.PhoneNumber!);
+        userProfile.SetName(user.Name);
+        userProfile.SetLastName(user.LastName);
+        userProfile.SetEmail(user.Email);
+        userProfile.SetPhoneNumber(user.PhoneNumber!);
 
         return userProfile;
     }
-    
-    public Task<bool> ForgotPasswordAsync(string email, string newPassWord)
+
+    public async Task<bool> ForgotPasswordAsync(string email, string newPassword)
     {
-        throw new NotImplementedException();
+        var user = await userManager.FindByEmailAsync(email);
+        if (user == null) return false;
+
+        var token = await userManager.GeneratePasswordResetTokenAsync(user);
+        var resetPasswordResult = await userManager.ResetPasswordAsync(user, token, newPassword);
+
+        return resetPasswordResult.Succeeded;
     }
 
     public async Task LogoutAsync()

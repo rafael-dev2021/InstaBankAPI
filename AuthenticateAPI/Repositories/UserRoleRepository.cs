@@ -6,7 +6,7 @@ namespace AuthenticateAPI.Repositories;
 public class UserRoleRepository(RoleManager<IdentityRole> roleManager, UserManager<User> userManager)
     : IUserRoleRepository
 {
-    private async Task CreateRoleIfNotExistsAsync(string roleName)
+    public async Task CreateRoleIfNotExistsAsync(string roleName)
     {
         if (!await roleManager.RoleExistsAsync(roleName))
         {
@@ -19,7 +19,7 @@ public class UserRoleRepository(RoleManager<IdentityRole> roleManager, UserManag
         }
     }
 
-    private async Task CreateUserIfNotExistsAsync(string email, string roleName)
+    public async Task CreateUserIfNotExistsAsync(string email, string roleName)
     {
         if (await userManager.FindByEmailAsync(email) == null)
         {
