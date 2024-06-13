@@ -51,8 +51,8 @@ public class ChangePasswordDtoRequestValidatorTests
         var result = _validator.TestValidate(request);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.OldPassword)
-            .WithErrorMessage("Old password is required.");
+        result.ShouldHaveValidationErrorFor(x => x.CurrentPassword)
+            .WithErrorMessage("Current password is required.");
     }
 
     [Theory]

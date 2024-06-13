@@ -16,31 +16,32 @@ public class AuthenticatedRepositoryTests
     private readonly AuthenticatedRepository _authenticatedRepository;
     private readonly Mock<IRegisterStrategy> _registerStrategyMock;
     private readonly Mock<IUpdateProfileStrategy> _updateProfileStrategyMock;
-
+    private readonly Mock<UserManager<User>> _userManagerMock;
+    private readonly Mock<SignInManager<User>> _signInManagerMock;
 
     protected AuthenticatedRepositoryTests()
     {
         _registerStrategyMock = new Mock<IRegisterStrategy>();
         _authenticatedStrategyMock = new Mock<IAuthenticatedStrategy>();
         _updateProfileStrategyMock = new Mock<IUpdateProfileStrategy>();
-
+        _signInManagerMock = new Mock<SignInManager<User>>();
 
         var userStoreMock = new Mock<IUserStore<User>>();
-        var userManagerMock =
+        _userManagerMock =
             new Mock<UserManager<User>>(userStoreMock.Object, null!, null!, null!, null!, null!, null!, null!, null!);
 
         var contextAccessorMock = new Mock<IHttpContextAccessor>();
         var userPrincipalFactoryMock = new Mock<IUserClaimsPrincipalFactory<User>>();
-        var signInManagerMock = new Mock<SignInManager<User>>(
-            userManagerMock.Object,
+        _signInManagerMock = new Mock<SignInManager<User>>(
+            _userManagerMock.Object,
             contextAccessorMock.Object,
             userPrincipalFactoryMock.Object,
             null!, null!, null!, null!
         );
 
         _authenticatedRepository = new AuthenticatedRepository(
-            signInManagerMock.Object,
-            userManagerMock.Object,
+            _signInManagerMock.Object,
+            _userManagerMock.Object,
             _authenticatedStrategyMock.Object,
             _registerStrategyMock.Object,
             _updateProfileStrategyMock.Object
@@ -116,7 +117,7 @@ public class AuthenticatedRepositoryTests
                 Times.Once);
             _registerStrategyMock.Verify(s => s.CreateUserAsync(request), Times.Once);
         }
-        
+
         [Fact(DisplayName = "RegisterAsync should return error response when validation fails")]
         public async Task RegisterAsync_Should_Return_Error_Response()
         {
@@ -136,12 +137,13 @@ public class AuthenticatedRepositoryTests
 
             // Assert
             response.Should().BeEquivalentTo(expectedResponse);
-            _registerStrategyMock.Verify(s => s.ValidateAsync(request.Cpf, request.Email, request.PhoneNumber), Times.Once);
+            _registerStrategyMock.Verify(s => s.ValidateAsync(request.Cpf, request.Email, request.PhoneNumber),
+                Times.Once);
             _registerStrategyMock.Verify(s => s.CreateUserAsync(It.IsAny<RegisterDtoRequest>()), Times.Never);
         }
     }
-    
-     public class UpdateProfileAsyncTests : AuthenticatedRepositoryTests
+
+    public class UpdateProfileAsyncTests : AuthenticatedRepositoryTests
     {
         [Fact(DisplayName = "UpdateProfileAsync should return success response when profile update is successful")]
         public async Task UpdateProfileAsync_Should_Return_Success_Response()
@@ -182,6 +184,211 @@ public class AuthenticatedRepositoryTests
             // Assert
             response.Should().BeEquivalentTo(expectedResponse);
             _updateProfileStrategyMock.Verify(s => s.UpdateProfileAsync(request, userId), Times.Once);
+        }
+    }
+
+    public class ChangePasswordAsyncTests : AuthenticatedRepositoryTests
+    {
+        [Fact(DisplayName = "ChangePasswordAsync should return true when password change is successful")]
+        public async Task ChangePasswordAsync_Should_Return_True_When_Password_Change_Is_Successful()
+        {
+            // Arrange
+            var request = new ChangePasswordDtoRequest(
+                "john@example.com",
+                "OldP@ssword",
+                "NewP@ssword123");
+
+            var user = new User { Email = "john@example.com" };
+
+            _userManagerMock
+                .Setup(um => um.FindByEmailAsync(request.Email!))
+                .ReturnsAsync(user);
+
+            _userManagerMock
+                .Setup(um => um.ChangePasswordAsync(user, request.CurrentPassword!, request.NewPassword!))
+                .ReturnsAsync(IdentityResult.Success);
+
+            // Act
+            var result = await _authenticatedRepository.ChangePasswordAsync(request);
+
+            // Assert
+            result.Should().BeTrue();
+            _userManagerMock.Verify(um => um.FindByEmailAsync(request.Email!), Times.Once);
+            _userManagerMock.Verify(um => um.ChangePasswordAsync(user, request.CurrentPassword!, request.NewPassword!),
+                Times.Once);
+        }
+
+        [Fact(DisplayName = "ChangePasswordAsync should return false when user is not found")]
+        public async Task ChangePasswordAsync_Should_Return_False_When_User_Not_Found()
+        {
+            // Arrange
+            var request = new ChangePasswordDtoRequest(
+                "nonexistent@example.com",
+                "OldP@ssword",
+                "NewP@ssword123");
+
+            _userManagerMock
+                .Setup(um => um.FindByEmailAsync(request.Email!))
+                .ReturnsAsync((User)null!);
+
+            // Act
+            var result = await _authenticatedRepository.ChangePasswordAsync(request);
+
+            // Assert
+            result.Should().BeFalse();
+            _userManagerMock.Verify(um => um.FindByEmailAsync(request.Email!), Times.Once);
+            _userManagerMock.Verify(
+                um => um.ChangePasswordAsync(It.IsAny<User>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact(DisplayName = "ChangePasswordAsync should return false when password change fails")]
+        public async Task ChangePasswordAsync_Should_Return_False_When_Password_Change_Fails()
+        {
+            // Arrange
+            var request = new ChangePasswordDtoRequest(
+                "john@example.com",
+                "OldP@ssword",
+                "NewP@ssword123");
+            var user = new User { Email = "john@example.com" };
+
+            _userManagerMock
+                .Setup(um => um.FindByEmailAsync(request.Email!))
+                .ReturnsAsync(user);
+
+            _userManagerMock
+                .Setup(um => um.ChangePasswordAsync(user, request.CurrentPassword!, request.NewPassword!))
+                .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Password change failed." }));
+
+            // Act
+            var result = await _authenticatedRepository.ChangePasswordAsync(request);
+
+            // Assert
+            result.Should().BeFalse();
+            _userManagerMock.Verify(um => um.FindByEmailAsync(request.Email!), Times.Once);
+            _userManagerMock.Verify(um => um.ChangePasswordAsync(user, request.CurrentPassword!, request.NewPassword!),
+                Times.Once);
+        }
+    }
+
+    public class GetUserProfileAsyncTests : AuthenticatedRepositoryTests
+    {
+        [Fact(DisplayName = "GetUserProfileAsync should return user profile when user is found")]
+        public async Task GetUserProfileAsync_Should_Return_User_Profile_When_User_Is_Found()
+        {
+            // Arrange
+            const string userEmail = "john@example.com";
+            var user = new User
+            {
+                Email = userEmail,
+                PhoneNumber = "+1234567890"
+            };
+            user.SetName("John");
+            user.SetLastName("Doe");
+
+            _userManagerMock
+                .Setup(um => um.FindByEmailAsync(userEmail))
+                .ReturnsAsync(user);
+
+            // Act
+            var result = await _authenticatedRepository.GetUserProfileAsync(userEmail);
+
+            // Assert
+            result.Should().NotBeNull();
+            result!.Email.Should().Be(user.Email);
+            result.Name.Should().Be(user.Name);
+            result.LastName.Should().Be(user.LastName);
+            result.PhoneNumber.Should().Be(user.PhoneNumber);
+            _userManagerMock.Verify(um => um.FindByEmailAsync(userEmail), Times.Once);
+        }
+
+        [Fact(DisplayName = "GetUserProfileAsync should return null when user is not found")]
+        public async Task GetUserProfileAsync_Should_Return_Null_When_User_Is_Not_Found()
+        {
+            // Arrange
+            const string userEmail = "nonexistent@example.com";
+
+            _userManagerMock
+                .Setup(um => um.FindByEmailAsync(userEmail))
+                .ReturnsAsync((User)null!);
+
+            // Act
+            var result = await _authenticatedRepository.GetUserProfileAsync(userEmail);
+
+            // Assert
+            result.Should().BeNull();
+            _userManagerMock.Verify(um => um.FindByEmailAsync(userEmail), Times.Once);
+        }
+    }
+
+    public class ForgotPasswordAsyncTests : AuthenticatedRepositoryTests
+    {
+        [Fact(DisplayName = "ForgotPasswordAsync should return true when password reset is successful")]
+        public async Task ForgotPasswordAsync_Should_Return_True_When_Password_Reset_Is_Successful()
+        {
+            // Arrange
+            const string userEmail = "john@example.com";
+            const string newPassword = "NewP@ssword123";
+
+            var user = new User { Email = userEmail };
+
+            _userManagerMock
+                .Setup(um => um.FindByEmailAsync(userEmail))
+                .ReturnsAsync(user);
+
+            _userManagerMock
+                .Setup(um => um.GeneratePasswordResetTokenAsync(user))
+                .ReturnsAsync("token");
+
+            _userManagerMock
+                .Setup(um => um.ResetPasswordAsync(user, "token", newPassword))
+                .ReturnsAsync(IdentityResult.Success);
+
+            // Act
+            var result = await _authenticatedRepository.ForgotPasswordAsync(userEmail, newPassword);
+
+            // Assert
+            result.Should().BeTrue();
+            _userManagerMock.Verify(um => um.FindByEmailAsync(userEmail), Times.Once);
+            _userManagerMock.Verify(um => um.GeneratePasswordResetTokenAsync(user), Times.Once);
+            _userManagerMock.Verify(um => um.ResetPasswordAsync(user, "token", newPassword), Times.Once);
+        }
+
+        [Fact(DisplayName = "ForgotPasswordAsync should return false when user is not found")]
+        public async Task ForgotPasswordAsync_Should_Return_False_When_User_Not_Found()
+        {
+            // Arrange
+            const string userEmail = "nonexistent@example.com";
+            const string newPassword = "NewP@ssword123";
+
+            _userManagerMock
+                .Setup(um => um.FindByEmailAsync(userEmail))
+                .ReturnsAsync((User)null!);
+
+            // Act
+            var result = await _authenticatedRepository.ForgotPasswordAsync(userEmail, newPassword);
+
+            // Assert
+            result.Should().BeFalse();
+            _userManagerMock.Verify(um => um.FindByEmailAsync(userEmail), Times.Once);
+            _userManagerMock.Verify(
+                um => um.GeneratePasswordResetTokenAsync(It.IsAny<User>()),
+                Times.Never);
+            _userManagerMock.Verify(
+                um => um.ResetPasswordAsync(It.IsAny<User>(), It.IsAny<string>(), It.IsAny<string>()),
+                Times.Never);
+        }
+    }
+
+    public class LogoutAsyncTests : AuthenticatedRepositoryTests
+    {
+        [Fact(DisplayName = "LogoutAsync should sign out successfully")]
+        public async Task LogoutAsync_Should_Sign_Out_Successfully()
+        {
+            // Act
+            await _authenticatedRepository.LogoutAsync();
+
+            // Assert
+            _signInManagerMock.Verify(sm => sm.SignOutAsync(), Times.Once);
         }
     }
 }
