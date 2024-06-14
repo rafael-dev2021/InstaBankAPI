@@ -32,13 +32,13 @@ public class SecurityHeadersAttributeTests
 
         // Assert
         Assert.True(httpContext.Response.Headers.ContainsKey("X-Content-Type-Options"));
-        Assert.Equal("nosniff", httpContext.Response.Headers["X-Content-Type-Options"]);
+        Assert.Equal("nosniff", httpContext.Response.Headers.XContentTypeOptions);
 
         Assert.True(httpContext.Response.Headers.ContainsKey("X-Frame-Options"));
-        Assert.Equal("SAMEORIGIN", httpContext.Response.Headers["X-Frame-Options"]);
+        Assert.Equal("SAMEORIGIN", httpContext.Response.Headers.XFrameOptions);
 
         Assert.True(httpContext.Response.Headers.ContainsKey("X-XSS-Protection"));
-        Assert.Equal("1; mode=block", httpContext.Response.Headers["X-XSS-Protection"]);
+        Assert.Equal("1; mode=block", httpContext.Response.Headers.XXSSProtection);
 
         Assert.True(httpContext.Response.Headers.ContainsKey("Referrer-Policy"));
         Assert.Equal("no-referrer", httpContext.Response.Headers["Referrer-Policy"]);
@@ -68,13 +68,13 @@ public class SecurityHeadersAttributeTests
 
         // Assert
         Assert.True(httpContext.Response.Headers.ContainsKey("X-Content-Type-Options"));
-        Assert.Equal("existing-value", httpContext.Response.Headers["X-Content-Type-Options"]);
+        Assert.Equal("existing-value", httpContext.Response.Headers.XContentTypeOptions);
 
         Assert.True(httpContext.Response.Headers.ContainsKey("X-Frame-Options"));
-        Assert.Equal("SAMEORIGIN", httpContext.Response.Headers["X-Frame-Options"]);
+        Assert.Equal("SAMEORIGIN", httpContext.Response.Headers.XFrameOptions);
 
         Assert.True(httpContext.Response.Headers.ContainsKey("X-XSS-Protection"));
-        Assert.Equal("1; mode=block", httpContext.Response.Headers["X-XSS-Protection"]);
+        Assert.Equal("1; mode=block", httpContext.Response.Headers.XXSSProtection);
 
         Assert.True(httpContext.Response.Headers.ContainsKey("Referrer-Policy"));
         Assert.Equal("no-referrer", httpContext.Response.Headers["Referrer-Policy"]);
