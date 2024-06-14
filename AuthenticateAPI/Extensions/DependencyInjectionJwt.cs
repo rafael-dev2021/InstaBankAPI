@@ -34,7 +34,7 @@ public static class DependencyInjectionJwt
         });
 
         service.AddTransient<ITokenService,TokenService>();
-        service.AddTransient<AuthenticateService>();
+        service.AddTransient<IAuthenticateService,AuthenticateService>();
 
         service.AddAuthorization();
     }
