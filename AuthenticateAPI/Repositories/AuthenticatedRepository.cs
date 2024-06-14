@@ -35,12 +35,12 @@ public class AuthenticatedRepository(
         return await updateProfileStrategy.UpdateProfileAsync(updateUserDtoRequest, userId);
     }
 
-    public async Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest request)
+    public async Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest changePasswordDtoRequest)
     {
-        var user = await userManager.FindByEmailAsync(request.Email!);
+        var user = await userManager.FindByEmailAsync(changePasswordDtoRequest.Email!);
         if (user == null) return false;
         var changePasswordResult =
-            await userManager.ChangePasswordAsync(user, request.CurrentPassword!, request.NewPassword!);
+            await userManager.ChangePasswordAsync(user, changePasswordDtoRequest.CurrentPassword!, changePasswordDtoRequest.NewPassword!);
 
         return changePasswordResult.Succeeded;
     }
