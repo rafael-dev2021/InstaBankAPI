@@ -67,7 +67,7 @@ public class UpdateProfileStrategy(UserManager<User> userManager, AppDbContext a
     
     private static void UpdateField<T>(User user, Action<User, T> setter, T currentValue, T newValue)
     {
-        if (!EqualityComparer<T>.Default.Equals(newValue, default(T)) && !EqualityComparer<T>.Default.Equals(newValue, currentValue))
+        if (!EqualityComparer<T>.Default.Equals(newValue, default) && !EqualityComparer<T>.Default.Equals(newValue, currentValue))
         {
             setter(user, newValue);
         }
