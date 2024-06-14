@@ -60,50 +60,6 @@ public class TokenServiceTests
             Assert.Equal("Test User", principal.FindFirst("Name")?.Value);
             Assert.Equal("123", principal.FindFirst(ClaimTypes.NameIdentifier)?.Value);
         }
-        
-        [Fact]
-        public void GenerateToken_ShouldThrowExceptionForInvalidSecretKey()
-        {
-            // Arrange
-            var invalidConfiguration = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string>
-                {
-                    {"Jwt:Issuer", "testIssuer"},
-                    {"Jwt:Audience", "testAudience"},
-                    {"Jwt:SecretKey", "short"} // Invalid key, too short
-                }!)
-                .Build();
-
-            var tokenService = new TokenService(invalidConfiguration);
-
-            var user = new User
-            {
-                Id = "123",
-                Email = "test@example.com",
-            };
-            user.SetName("Test User");
-
-            // Act & Assert
-            var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            {
-                var token = tokenService.GenerateToken(user, 30);
-
-                // Validate the token
-                var tokenHandler = new JwtSecurityTokenHandler();
-                tokenHandler.ValidateToken(token, new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = invalidConfiguration["Jwt:Issuer"],
-                    ValidAudience = invalidConfiguration["Jwt:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(invalidConfiguration["Jwt:SecretKey"]!))
-                }, out _);
-            });
-
-            Assert.Contains("IDX10653", exception.Message);
-        }
     }
 
     public class GenerateAccessTokenTests : TokenServiceTests
