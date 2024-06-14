@@ -24,7 +24,8 @@ public static class MapAuthenticate
                 var response = await service.RegisterAsync(request);
                 var location = $"/v1/users/{request.Email}";
                 return Results.Created(location, response);
-            }
+            },
+            StatusCodes.Status201Created 
         );
 
         MapAuthorizedEndpoint<UpdateUserDtoRequest>(
@@ -43,10 +44,11 @@ public static class MapAuthenticate
     private static void MapPostEndpoint<T>(
         WebApplication app,
         string route,
-        Func<AuthenticateService, T, Task<object>> handler) where T : class
+        Func<IAuthenticateService, T, Task<object>> handler,
+        int expectedStatusCode = StatusCodes.Status200OK) where T : class
     {
         app.MapPost(route, async (
-            [FromServices] AuthenticateService service,
+            [FromServices] IAuthenticateService service,
             [FromBody] T request,
             IValidator<T> validator) =>
         {
@@ -56,17 +58,17 @@ public static class MapAuthenticate
                 return validationResult;
             }
 
-            return await HandleRequestAsync(service, handler, request);
+            return await HandleRequestAsync(service, handler, request, expectedStatusCode);
         });
     }
 
     private static void MapAuthorizedEndpoint<T>(
         WebApplication app,
         string route,
-        Func<AuthenticateService, T, string, Task<object>> handler) where T : class
+        Func<IAuthenticateService, T, string, Task<object>> handler) where T : class
     {
         app.MapPut(route, [Authorize] async (
-            [FromServices] AuthenticateService service,
+            [FromServices] IAuthenticateService service,
             [FromBody] T request,
             [FromQuery] string userId,
             IValidator<T> validator) =>
@@ -87,25 +89,31 @@ public static class MapAuthenticate
         return !result.IsValid ? Results.ValidationProblem(result.ToDictionary()) : null;
     }
 
-    private static async Task<IResult> HandleRequestAsync<T>(
-        AuthenticateService service,
-        Func<AuthenticateService, T, Task<object>> handler,
-        T request)
+    public static async Task<IResult> HandleRequestAsync<T>(
+        IAuthenticateService service,
+        Func<IAuthenticateService, T, Task<object>> handler,
+        T request,
+        int expectedStatusCode)
     {
         try
         {
             var response = await handler(service, request);
-            return Results.Ok(response);
+            return expectedStatusCode switch
+            {
+                StatusCodes.Status201Created => Results.Created("", response),
+                _ => Results.Ok(response)
+            };
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Results.Json(new { ex.Message }, statusCode: 400);
+            var errorResponse = new Dictionary<string, string> { { "Message", ex.Message } };
+            return Results.Json(errorResponse, statusCode: StatusCodes.Status400BadRequest);
         }
     }
 
-    private static async Task<IResult> HandleAuthorizedRequestAsync<T>(
-        AuthenticateService service,
-        Func<AuthenticateService, T, string, Task<object>> handler,
+    public static async Task<IResult> HandleAuthorizedRequestAsync<T>(
+        IAuthenticateService service,
+        Func<IAuthenticateService, T, string, Task<object>> handler,
         T request,
         string userId)
     {
@@ -116,7 +124,8 @@ public static class MapAuthenticate
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Results.Json(new { ex.Message }, statusCode: 400);
+            var errorResponse = new Dictionary<string, string> { { "Message", ex.Message } };
+            return Results.Json(errorResponse, statusCode: StatusCodes.Status400BadRequest);
         }
     }
 }

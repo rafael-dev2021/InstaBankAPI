@@ -5,7 +5,7 @@ using AuthenticateAPI.Security;
 
 namespace AuthenticateAPI.Services;
 
-public class AuthenticateService(IAuthenticatedRepository repository, ITokenService tokenService)
+public class AuthenticateService(IAuthenticatedRepository repository, ITokenService tokenService) : IAuthenticateService
 {
     public async Task<TokenDtoResponse> LoginAsync(LoginDtoRequest request)
     {
