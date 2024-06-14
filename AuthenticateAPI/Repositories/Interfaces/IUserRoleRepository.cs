@@ -1,4 +1,4 @@
-﻿namespace AuthenticateAPI.Repositories;
+﻿namespace AuthenticateAPI.Repositories.Interfaces;
 
 public interface IUserRoleRepository
 {

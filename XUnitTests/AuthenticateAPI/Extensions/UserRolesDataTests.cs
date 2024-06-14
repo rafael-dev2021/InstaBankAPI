@@ -1,5 +1,6 @@
 ﻿using AuthenticateAPI.Extensions;
 using AuthenticateAPI.Repositories;
+using AuthenticateAPI.Repositories.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;

@@ -1,6 +1,7 @@
 using AuthenticateAPI.Dto.Request;
 using AuthenticateAPI.Dto.Response;
-using AuthenticateAPI.Repositories;
+using AuthenticateAPI.Repositories.Interfaces;
+using AuthenticateAPI.Security;
 
 namespace AuthenticateAPI.Services;
 

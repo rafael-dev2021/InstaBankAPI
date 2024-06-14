@@ -1,6 +1,7 @@
 ﻿using AuthenticateAPI.Context;
 using AuthenticateAPI.Models;
 using AuthenticateAPI.Repositories;
+using AuthenticateAPI.Repositories.Interfaces;
 using AuthenticateAPI.Repositories.Strategies;
 using Microsoft.AspNetCore.Identity;
 

@@ -2,7 +2,7 @@
 using AuthenticateAPI.Dto.Response;
 using AuthenticateAPI.Models;
 
-namespace AuthenticateAPI.Repositories;
+namespace AuthenticateAPI.Repositories.Interfaces;
 
 public interface IAuthenticatedRepository
 {

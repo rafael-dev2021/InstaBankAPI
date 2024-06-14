@@ -2,6 +2,7 @@
 using AuthenticateAPI.Dto.Request;
 using AuthenticateAPI.Dto.Response;
 using AuthenticateAPI.Models;
+using AuthenticateAPI.Repositories.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 

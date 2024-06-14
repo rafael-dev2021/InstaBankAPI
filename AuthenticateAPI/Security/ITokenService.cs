@@ -1,7 +1,7 @@
 ﻿using System.Security.Claims;
 using AuthenticateAPI.Models;
 
-namespace AuthenticateAPI.Services;
+namespace AuthenticateAPI.Security;
 
 public interface ITokenService
 {

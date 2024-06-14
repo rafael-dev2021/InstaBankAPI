@@ -1,4 +1,4 @@
-﻿using AuthenticateAPI.Repositories;
+﻿using AuthenticateAPI.Repositories.Interfaces;
 
 namespace AuthenticateAPI.Extensions;
 

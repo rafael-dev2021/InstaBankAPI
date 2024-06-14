@@ -1,7 +1,7 @@
 using AuthenticateAPI.Dto.Request;
 using AuthenticateAPI.Dto.Response;
 
-namespace AuthenticateAPI.Repositories.Strategies;
+namespace AuthenticateAPI.Repositories.Interfaces;
 
 public interface IRegisterStrategy
 {
