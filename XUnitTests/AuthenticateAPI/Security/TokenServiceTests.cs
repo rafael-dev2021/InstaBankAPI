@@ -16,8 +16,7 @@ public class TokenServiceTests
     {
         var configurationBuilder = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.json")
-            .AddEnvironmentVariables();
+            .AddJsonFile("appsettings.json");
 
         _configuration = configurationBuilder.Build();
     }
