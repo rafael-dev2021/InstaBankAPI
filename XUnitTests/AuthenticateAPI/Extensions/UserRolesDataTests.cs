@@ -1,5 +1,4 @@
 ﻿using AuthenticateAPI.Extensions;
-using AuthenticateAPI.Repositories;
 using AuthenticateAPI.Repositories.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -61,6 +60,10 @@ public class UserRolesDataTests
             .Returns(serviceScopeFactoryMock.Object);
 
         // Act & Assert
-        await UserRolesData.AddUserRolesDataAsync(applicationBuilderMock.Object);
+        var exception =
+            await Record.ExceptionAsync(() => UserRolesData.AddUserRolesDataAsync(applicationBuilderMock.Object));
+
+        // Assert
+        Assert.Null(exception);
     }
 }
