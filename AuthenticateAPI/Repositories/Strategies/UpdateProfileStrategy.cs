@@ -37,13 +37,13 @@ public class UpdateProfileStrategy(UserManager<User> userManager, AppDbContext a
         return validationErrors;
     }
 
-    public async Task<UpdatedDtoResponse> UpdateProfileAsync(UpdateUserDtoRequest request, string userId)
+    public async Task<UpdatedDtoResponse> UpdateProfileAsync(UpdateUserDtoRequest updateUserDtoRequest, string userId)
     {
         var user = await userManager.FindByIdAsync(userId);
 
         var validationErrors = await ValidateAsync(
-            request.Email != user!.Email ? request.Email : null,
-            request.PhoneNumber != user.PhoneNumber ? request.PhoneNumber : null,
+            updateUserDtoRequest.Email != user!.Email ? updateUserDtoRequest.Email : null,
+            updateUserDtoRequest.PhoneNumber != user.PhoneNumber ? updateUserDtoRequest.PhoneNumber : null,
             userId
         );
         
@@ -52,10 +52,10 @@ public class UpdateProfileStrategy(UserManager<User> userManager, AppDbContext a
             return new UpdatedDtoResponse(false, string.Join(Environment.NewLine, validationErrors));
         }
 
-        UpdateField(user, (u, v) => u.Email = v, user.Email, request.Email);
-        UpdateField(user, (u, v) => u.PhoneNumber = v, user.PhoneNumber, request.PhoneNumber);
-        UpdateField(user, (u, v) => u.SetName(v), user.Name, request.Name);
-        UpdateField(user, (u, v) => u.SetLastName(v), user.LastName, request.LastName);
+        UpdateField(user, (u, v) => u.Email = v, user.Email, updateUserDtoRequest.Email);
+        UpdateField(user, (u, v) => u.PhoneNumber = v, user.PhoneNumber, updateUserDtoRequest.PhoneNumber);
+        UpdateField(user, (u, v) => u.SetName(v), user.Name, updateUserDtoRequest.Name);
+        UpdateField(user, (u, v) => u.SetLastName(v), user.LastName, updateUserDtoRequest.LastName);
 
 
         var result = await userManager.UpdateAsync(user);
