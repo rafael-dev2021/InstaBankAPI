@@ -44,7 +44,7 @@ public class UserRoleRepositoryTests
             _roleManagerMock.Verify(rm => rm.RoleExistsAsync(roleName), Times.Once);
             _roleManagerMock.Verify(
                 rm => rm.CreateAsync(It.Is<IdentityRole>(role =>
-                    role.Name == roleName && role.NormalizedName == roleName.ToUpper())), Times.Once);
+                    role.Name == roleName && role.NormalizedName!.Equals(roleName, StringComparison.CurrentCultureIgnoreCase))), Times.Once);
         }
 
         [Fact(DisplayName = "CreateRoleIfNotExistsAsync should not create role if it exists")]
@@ -206,7 +206,7 @@ public class UserRoleRepositoryTests
             _roleManagerMock.Verify(rm => rm.RoleExistsAsync(roleName), Times.Once);
             _roleManagerMock.Verify(
                 rm => rm.CreateAsync(It.Is<IdentityRole>(role =>
-                    role.Name == roleName && role.NormalizedName == roleName.ToUpper())), Times.Once);
+                    role.Name == roleName && role.NormalizedName!.Equals(roleName, StringComparison.CurrentCultureIgnoreCase))), Times.Once);
         }
 
         [Fact(DisplayName = "RoleAsync should create user role if not exists")]
@@ -227,7 +227,7 @@ public class UserRoleRepositoryTests
             _roleManagerMock.Verify(rm => rm.RoleExistsAsync(roleName), Times.Once);
             _roleManagerMock.Verify(
                 rm => rm.CreateAsync(It.Is<IdentityRole>(role =>
-                    role.Name == roleName && role.NormalizedName == roleName.ToUpper())), Times.Once);
+                    role.Name == roleName && role.NormalizedName!.Equals(roleName, StringComparison.CurrentCultureIgnoreCase))), Times.Once);
         }
     }
 }
