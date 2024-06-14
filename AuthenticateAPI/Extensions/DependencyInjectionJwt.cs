@@ -8,7 +8,7 @@ namespace AuthenticateAPI.Extensions;
 
 public static class DependencyInjectionJwt
 {
-    public static IServiceCollection AddDependencyInjectionJwt(this IServiceCollection service,
+    public static void AddDependencyInjectionJwt(this IServiceCollection service,
         IConfiguration configuration)
     {
         var key = Encoding.ASCII.GetBytes(configuration["Jwt:SecretKey"] ?? string.Empty);
@@ -35,7 +35,7 @@ public static class DependencyInjectionJwt
 
         service.AddTransient<ITokenService,TokenService>();
         service.AddTransient<AuthenticateService>();
-        
-        return service.AddAuthorization();
+
+        service.AddAuthorization();
     }
 }
