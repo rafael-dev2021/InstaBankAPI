@@ -10,104 +10,113 @@ public static class MapAuthenticate
 {
     public static void MapAuthenticateEndpoints(this WebApplication app)
     {
-        app.MapPost("/v1/auth/login",
-            async (
-                [FromServices] AuthenticateService service,
-                [FromBody] LoginDtoRequest request,
-                IValidator<LoginDtoRequest> validator) =>
+        MapPostEndpoint<LoginDtoRequest>(
+            app,
+            "/v1/auth/login",
+            async (service, request) => await service.LoginAsync(request)
+        );
+
+        MapPostEndpoint<RegisterDtoRequest>(
+            app,
+            "/v1/auth/register",
+            async (service, request) =>
             {
-                var validationResult = await ValidateAsync(request, validator);
-                if (validationResult != null)
-                {
-                    return validationResult;
-                }
+                var response = await service.RegisterAsync(request);
+                var location = $"/v1/users/{request.Email}";
+                return Results.Created(location, response);
+            }
+        );
 
-                try
-                {
-                    var response = await service.LoginAsync(request);
-                    return Results.Ok(response);
-                }
-                catch (UnauthorizedAccessException ex)
-                {
-                    return Results.Json(new { ex.Message }, statusCode: 400);
-                }
-            });
+        MapAuthorizedEndpoint<UpdateUserDtoRequest>(
+            app,
+            "/v1/auth/update-profile",
+            async (service, request, userId) => await service.UpdateAsync(request, userId)
+        );
 
-        app.MapPost("/v1/auth/register",
-            async (
-                [FromServices] AuthenticateService service,
-                [FromBody] RegisterDtoRequest request,
-                IValidator<RegisterDtoRequest> validator) =>
+        MapAuthorizedEndpoint<ChangePasswordDtoRequest>(
+            app,
+            "/v1/auth/change-password",
+            async (service, request, _) => await service.ChangePasswordAsync(request)
+        );
+    }
+
+    private static void MapPostEndpoint<T>(
+        WebApplication app,
+        string route,
+        Func<AuthenticateService, T, Task<object>> handler) where T : class
+    {
+        app.MapPost(route, async (
+            [FromServices] AuthenticateService service,
+            [FromBody] T request,
+            IValidator<T> validator) =>
+        {
+            var validationResult = await ValidateAsync(request, validator);
+            if (validationResult != null)
             {
-                var validationResult = await ValidateAsync(request, validator);
-                if (validationResult != null)
-                {
-                    return validationResult;
-                }
+                return validationResult;
+            }
 
-                try
-                {
-                    var response = await service.RegisterAsync(request);
-                    var location = $"/v1/users/{request.Email}";
-                    return Results.Created(location, response);
-                }
-                catch (UnauthorizedAccessException ex)
-                {
-                    return Results.Json(new { ex.Message }, statusCode: 400);
-                }
-            });
+            return await HandleRequestAsync(service, handler, request);
+        });
+    }
 
-        app.MapPut("/v1/auth/update-profile",
-            [Authorize] async (
-                [FromServices] AuthenticateService service,
-                [FromBody] UpdateUserDtoRequest request,
-                [FromQuery] string userId,
-                IValidator<UpdateUserDtoRequest> validator) =>
+    private static void MapAuthorizedEndpoint<T>(
+        WebApplication app,
+        string route,
+        Func<AuthenticateService, T, string, Task<object>> handler) where T : class
+    {
+        app.MapPut(route, [Authorize] async (
+            [FromServices] AuthenticateService service,
+            [FromBody] T request,
+            [FromQuery] string userId,
+            IValidator<T> validator) =>
+        {
+            var validationResult = await ValidateAsync(request, validator);
+            if (validationResult != null)
             {
-                var validationResult = await ValidateAsync(request, validator);
-                if (validationResult != null)
-                {
-                    return validationResult;
-                }
+                return validationResult;
+            }
 
-                try
-                {
-                    var response = await service.UpdateAsync(request, userId);
-                    return Results.Ok(response);
-                }
-                catch (UnauthorizedAccessException ex)
-                {
-                    return Results.Json(new { ex.Message }, statusCode: 400);
-                }
-            });
-
-        app.MapPost("/v1/auth/change-password",
-            [Authorize] async (
-                [FromServices] AuthenticateService service,
-                [FromBody] ChangePasswordDtoRequest request,
-                IValidator<ChangePasswordDtoRequest> validator) =>
-            {
-                var validationResult = await ValidateAsync(request, validator);
-                if (validationResult != null)
-                {
-                    return validationResult;
-                }
-
-                try
-                {
-                    var response = await service.ChangePasswordAsync(request);
-                    return Results.Ok(response);
-                }
-                catch (UnauthorizedAccessException ex)
-                {
-                    return Results.Json(new { ex.Message }, statusCode: 400);
-                }
-            });
+            return await HandleAuthorizedRequestAsync(service, handler, request, userId);
+        });
     }
 
     private static async Task<IResult?> ValidateAsync<T>(T request, IValidator<T> validator)
     {
         var result = await validator.ValidateAsync(request);
         return !result.IsValid ? Results.ValidationProblem(result.ToDictionary()) : null;
+    }
+
+    private static async Task<IResult> HandleRequestAsync<T>(
+        AuthenticateService service,
+        Func<AuthenticateService, T, Task<object>> handler,
+        T request)
+    {
+        try
+        {
+            var response = await handler(service, request);
+            return Results.Ok(response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Results.Json(new { ex.Message }, statusCode: 400);
+        }
+    }
+
+    private static async Task<IResult> HandleAuthorizedRequestAsync<T>(
+        AuthenticateService service,
+        Func<AuthenticateService, T, string, Task<object>> handler,
+        T request,
+        string userId)
+    {
+        try
+        {
+            var response = await handler(service, request, userId);
+            return Results.Ok(response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Results.Json(new { ex.Message }, statusCode: 400);
+        }
     }
 }
