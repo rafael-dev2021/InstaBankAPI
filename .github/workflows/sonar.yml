@@ -50,6 +50,21 @@ jobs:
           Write-Output "Excluding the following paths from coverage:"
           Write-Output "**/AuthenticateAPI/Migrations/**"
 
+      - name: Set up Configuration File
+        shell: powershell
+        run: |
+          $configPath = Join-Path $env:GITHUB_WORKSPACE "appsettings.json"
+          $json = @"
+          {
+            "Jwt": {
+              "SecretKey": "${{ secrets.JWT_SECRET_KEY }}",
+              "Issuer": "${{ secrets.JWT_ISSUER }}",
+              "Audience": "${{ secrets.JWT_AUDIENCE }}"
+            }
+          }
+          "@
+          Set-Content -Path $configPath -Value $json
+
       - name: SonarCloud - Begin Analysis
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -83,3 +98,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: powershell
         run: .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+      - name: Clean up Configuration File
+        shell: powershell
+        run: Remove-Item -Path $configPath
