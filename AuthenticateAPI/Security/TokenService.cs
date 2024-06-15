@@ -6,10 +6,12 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace AuthenticateAPI.Security;
 
-public class TokenService(JwtSettings jwtSettings) : ITokenService
+public class TokenService(JwtSettings jwtSettings, ILogger<TokenService> logger) : ITokenService
 {
     public string GenerateToken(User user, int expirationToken)
     {
+        logger.LogInformation("Generating token for user: {Email}", user.Email);
+
         var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey!);
         var tokenHandler = new JwtSecurityTokenHandler();
         var tokenDescriptor = new SecurityTokenDescriptor
@@ -28,21 +30,27 @@ public class TokenService(JwtSettings jwtSettings) : ITokenService
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
+        var tokenString = tokenHandler.WriteToken(token);
+
+        logger.LogInformation("Token generated successfully for user: {Email}", user.Email);
+        return tokenString;
     }
 
     public string GenerateAccessToken(User user)
     {
+        logger.LogInformation("Generating access token for user: {Email}", user.Email);
         return GenerateToken(user, jwtSettings.ExpirationTokenMinutes);
     }
 
     public string GenerateRefreshToken(User user)
     {
+        logger.LogInformation("Generating refresh token for user: {Email}", user.Email);
         return GenerateToken(user, jwtSettings.RefreshTokenExpirationMinutes);
     }
 
     public ClaimsPrincipal? ValidateToken(string token)
     {
+        logger.LogInformation("Validating token");
         var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey!);
         var tokenHandler = new JwtSecurityTokenHandler();
         var validationParameters = new TokenValidationParameters
@@ -59,10 +67,12 @@ public class TokenService(JwtSettings jwtSettings) : ITokenService
         try
         {
             var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
+            logger.LogInformation("Token validated successfully");
             return principal;
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogWarning("Token validation failed: {Message}", ex.Message);
             return null;
         }
     }
