@@ -10,7 +10,7 @@ namespace XUnitTests.AuthenticateAPI.Security;
 
 public class TokenServiceTests
 {
-    private readonly IConfiguration _configuration;
+    private readonly JwtSettings _jwtSettings;
 
     protected TokenServiceTests()
     {
@@ -18,7 +18,9 @@ public class TokenServiceTests
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json");
 
-        _configuration = configurationBuilder.Build();
+        var configuration = configurationBuilder.Build();
+        _jwtSettings = new JwtSettings();
+        configuration.Bind("Jwt", _jwtSettings);
     }
 
     public class GenerateTokenTests : TokenServiceTests
@@ -27,7 +29,7 @@ public class TokenServiceTests
         public void GenerateToken_ShouldReturnValidToken()
         {
             // Arrange
-            var tokenService = new TokenService(_configuration);
+            var tokenService = new TokenService(_jwtSettings);
 
             var user = new User
             {
@@ -48,9 +50,9 @@ public class TokenServiceTests
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = _configuration["Jwt:Issuer"],
-                ValidAudience = _configuration["Jwt:Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["Jwt:SecretKey"]!))
+                ValidIssuer = _jwtSettings.Issuer,
+                ValidAudience = _jwtSettings.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtSettings.SecretKey!))
             }, out var validatedToken);
 
             Assert.NotNull(validatedToken);
@@ -65,10 +67,10 @@ public class TokenServiceTests
     public class GenerateAccessTokenTests : TokenServiceTests
     {
         [Fact]
-        public void GenerateToken_ShouldReturnValidToken()
+        public void GenerateAccessToken_ShouldReturnValidToken()
         {
             // Arrange
-            var tokenService = new TokenService(_configuration);
+            var tokenService = new TokenService(_jwtSettings);
 
             var user = new User
             {
@@ -89,9 +91,9 @@ public class TokenServiceTests
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = _configuration["Jwt:Issuer"],
-                ValidAudience = _configuration["Jwt:Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["Jwt:SecretKey"]!))
+                ValidIssuer = _jwtSettings.Issuer,
+                ValidAudience = _jwtSettings.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtSettings.SecretKey!))
             }, out var validatedToken);
 
             Assert.NotNull(validatedToken);
@@ -106,10 +108,10 @@ public class TokenServiceTests
     public class GenerateRefreshTokenTests : TokenServiceTests
     {
         [Fact]
-        public void GenerateToken_ShouldReturnValidToken()
+        public void GenerateRefreshToken_ShouldReturnValidToken()
         {
             // Arrange
-            var tokenService = new TokenService(_configuration);
+            var tokenService = new TokenService(_jwtSettings);
 
             var user = new User
             {
@@ -130,9 +132,9 @@ public class TokenServiceTests
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = _configuration["Jwt:Issuer"],
-                ValidAudience = _configuration["Jwt:Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["Jwt:SecretKey"]!))
+                ValidIssuer = _jwtSettings.Issuer,
+                ValidAudience = _jwtSettings.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtSettings.SecretKey!))
             }, out var validatedToken);
 
             Assert.NotNull(validatedToken);
@@ -150,7 +152,7 @@ public class TokenServiceTests
         public void ValidateToken_ShouldReturnPrincipalForValidToken()
         {
             // Arrange
-            var tokenService = new TokenService(_configuration);
+            var tokenService = new TokenService(_jwtSettings);
 
             var user = new User
             {
@@ -175,7 +177,7 @@ public class TokenServiceTests
         public void ValidateToken_ShouldReturnNullForInvalidToken()
         {
             // Arrange
-            var tokenService = new TokenService(_configuration);
+            var tokenService = new TokenService(_jwtSettings);
             const string invalidToken = "invalid_token_string";
 
             // Act
