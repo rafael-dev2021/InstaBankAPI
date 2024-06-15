@@ -18,7 +18,7 @@ public class LoggingMiddleware(RequestDelegate next, ILogger<LoggingMiddleware> 
         finally
         {
             stopwatch.Stop();
-            logger.LogInformation($"Request Duration: {stopwatch.ElapsedMilliseconds}ms");
+            logger.LogInformation("Request Duration: {Duration}ms", stopwatch.ElapsedMilliseconds);
         }
     }
 
@@ -42,9 +42,10 @@ public class LoggingMiddleware(RequestDelegate next, ILogger<LoggingMiddleware> 
         };
 
         logger.LogInformation(
-            $"Audit Event: {requestInfo.RequestMethod} {requestInfo.RequestPath}{requestInfo.QueryString} - UserAgent: {requestInfo.UserAgent}");
-        logger.LogInformation($"Request Body: {requestInfo.RequestBody}");
-        logger.LogInformation($"Response: Status {responseInfo.StatusCode}");
+            "Audit Event: {RequestMethod} {RequestPath}{QueryString} - UserAgent: {UserAgent}",
+            requestInfo.RequestMethod, requestInfo.RequestPath, requestInfo.QueryString, requestInfo.UserAgent);
+        logger.LogInformation("Request Body: {RequestBody}", requestInfo.RequestBody);
+        logger.LogInformation("Response: Status {StatusCode}", responseInfo.StatusCode);
     }
 
     public static async Task<string> GetRequestBodyAsync(HttpRequest request)
