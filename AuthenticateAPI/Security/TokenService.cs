@@ -6,11 +6,11 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace AuthenticateAPI.Security;
 
-public class TokenService(IConfiguration configuration) : ITokenService
+public class TokenService(JwtSettings jwtSettings) : ITokenService
 {
     public string GenerateToken(User user, int expirationToken)
     {
-        var key = Encoding.ASCII.GetBytes(configuration["Jwt:SecretKey"] ?? string.Empty);
+        var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey!);
         var tokenHandler = new JwtSecurityTokenHandler();
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -23,8 +23,8 @@ public class TokenService(IConfiguration configuration) : ITokenService
             Expires = DateTime.UtcNow.AddMinutes(expirationToken),
             SigningCredentials =
                 new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
-            Issuer = configuration["Jwt:Issuer"],
-            Audience = configuration["Jwt:Audience"]
+            Issuer = jwtSettings.Issuer,
+            Audience = jwtSettings.Audience
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
@@ -33,19 +33,17 @@ public class TokenService(IConfiguration configuration) : ITokenService
 
     public string GenerateAccessToken(User user)
     {
-        var expirationToken = int.Parse(configuration["Jwt:ExpirationTokenMinutes"] ?? string.Empty);
-        return GenerateToken(user, expirationToken);
+        return GenerateToken(user, jwtSettings.ExpirationTokenMinutes);
     }
 
     public string GenerateRefreshToken(User user)
     {
-        var expirationToken = int.Parse(configuration["Jwt:RefreshTokenExpirationMinutes"] ?? string.Empty);
-        return GenerateToken(user, expirationToken);
+        return GenerateToken(user, jwtSettings.RefreshTokenExpirationMinutes);
     }
 
     public ClaimsPrincipal? ValidateToken(string token)
     {
-        var key = Encoding.ASCII.GetBytes(configuration["Jwt:SecretKey"] ?? string.Empty);
+        var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey!);
         var tokenHandler = new JwtSecurityTokenHandler();
         var validationParameters = new TokenValidationParameters
         {
@@ -53,8 +51,8 @@ public class TokenService(IConfiguration configuration) : ITokenService
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = configuration["Jwt:Issuer"],
-            ValidAudience = configuration["Jwt:Audience"],
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(key)
         };
 
