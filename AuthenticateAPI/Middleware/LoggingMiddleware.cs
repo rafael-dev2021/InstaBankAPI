@@ -22,7 +22,7 @@ public class LoggingMiddleware(RequestDelegate next, ILogger<LoggingMiddleware> 
         }
     }
 
-    private static async Task LogAuditEvent(HttpRequest request, HttpResponse response, ILogger logger)
+    public static async Task LogAuditEvent(HttpRequest request, HttpResponse response, ILogger logger)
     {
         var requestBody = await GetRequestBodyAsync(request);
 
@@ -47,7 +47,7 @@ public class LoggingMiddleware(RequestDelegate next, ILogger<LoggingMiddleware> 
         logger.LogInformation($"Response: Status {responseInfo.StatusCode}");
     }
 
-    private static async Task<string> GetRequestBodyAsync(HttpRequest request)
+    public static async Task<string> GetRequestBodyAsync(HttpRequest request)
     {
         request.EnableBuffering();
         var buffer = new byte[Convert.ToInt32(request.ContentLength)];
