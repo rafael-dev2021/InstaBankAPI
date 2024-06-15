@@ -36,6 +36,10 @@ public static class DependencyInjectionJwt
         service.AddTransient<ITokenService,TokenService>();
         service.AddTransient<IAuthenticateService,AuthenticateService>();
 
+        var jwtSettings = new JwtSettings();
+        configuration.Bind("Jwt", jwtSettings);
+        service.AddSingleton(jwtSettings);
+        
         service.AddAuthorization();
     }
 }
