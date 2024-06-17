@@ -42,10 +42,9 @@ public class LoggingMiddleware(RequestDelegate next, ILogger<LoggingMiddleware> 
         };
 
         logger.LogInformation(
-            "Audit Event: {RequestMethod} {RequestPath}{QueryString} - UserAgent: {UserAgent}",
-            requestInfo.RequestMethod, requestInfo.RequestPath, requestInfo.QueryString, requestInfo.UserAgent);
+            "Audit Event: {RequestMethod} {RequestPath}{QueryString} - UserAgent: {UserAgent} - Status {StatusCode}",
+            requestInfo.RequestMethod, requestInfo.RequestPath, requestInfo.QueryString, requestInfo.UserAgent, responseInfo.StatusCode);
         logger.LogInformation("Request Body: {RequestBody}", requestInfo.RequestBody);
-        logger.LogInformation("Response: Status {StatusCode}", responseInfo.StatusCode);
     }
 
     public static async Task<string> GetRequestBodyAsync(HttpRequest request)

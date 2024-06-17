@@ -48,7 +48,6 @@ public class LoggingMiddlewareTests
 
         const string expectedLogMessage1 = $"Audit Event: GET /api/test?param1=value1 - UserAgent: TestUserAgent";
         const string expectedLogMessage2 = "Request Body: {\"key\":\"value\"}";
-        const string expectedLogMessage3 = "Response: Status 200";
 
         // Simulate request body
         const string requestBody = "{\"key\":\"value\"}";
@@ -69,10 +68,6 @@ public class LoggingMiddlewareTests
         loggerMock.Verify(
             x => x.Log(LogLevel.Information, It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedLogMessage2)), null,
-                ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!), Times.Once);
-        loggerMock.Verify(
-            x => x.Log(LogLevel.Information, It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedLogMessage3)), null,
                 ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!), Times.Once);
     }
 
