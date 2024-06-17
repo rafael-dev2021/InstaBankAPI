@@ -72,7 +72,7 @@ public class TokenService(JwtSettings jwtSettings, ILogger<TokenService> logger)
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Token validation failed: {Message}", ex.Message);
+            logger.LogWarning(ex,"Token validation failed: {Message}", ex.Message);
             return null;
         }
     }
