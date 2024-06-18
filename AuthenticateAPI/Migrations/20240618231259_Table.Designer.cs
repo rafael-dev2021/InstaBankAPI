@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AuthenticateAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20240618214608_Table")]
+    [Migration("20240618231259_Table")]
     partial class Table
     {
         /// <inheritdoc />
@@ -86,7 +86,9 @@ namespace AuthenticateAPI.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("Role")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");

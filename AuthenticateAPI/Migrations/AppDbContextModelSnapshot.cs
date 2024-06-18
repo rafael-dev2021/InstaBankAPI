@@ -83,7 +83,9 @@ namespace AuthenticateAPI.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("Role")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
