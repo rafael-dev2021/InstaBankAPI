@@ -1,3 +1,4 @@
+using AuthenticateAPI.Context;
 using AuthenticateAPI.Dto.Request;
 using AuthenticateAPI.Dto.Response;
 using AuthenticateAPI.Models;
@@ -6,6 +7,7 @@ using AuthenticateAPI.Repositories.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 
 namespace XUnitTests.AuthenticateAPI.Repositories;
@@ -18,9 +20,16 @@ public class AuthenticatedRepositoryTests
     private readonly Mock<IUpdateProfileStrategy> _updateProfileStrategyMock;
     private readonly Mock<UserManager<User>> _userManagerMock;
     private readonly Mock<SignInManager<User>> _signInManagerMock;
+    private readonly AppDbContext _appDbContext;
 
     protected AuthenticatedRepositoryTests()
     {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: "TestDatabase")
+            .Options;
+
+        _appDbContext = new AppDbContext(options);
+
         _registerStrategyMock = new Mock<IRegisterStrategy>();
         _authenticatedStrategyMock = new Mock<IAuthenticatedStrategy>();
         _updateProfileStrategyMock = new Mock<IUpdateProfileStrategy>();
@@ -44,8 +53,53 @@ public class AuthenticatedRepositoryTests
             _userManagerMock.Object,
             _authenticatedStrategyMock.Object,
             _registerStrategyMock.Object,
-            _updateProfileStrategyMock.Object
+            _updateProfileStrategyMock.Object,
+            _appDbContext
         );
+    }
+
+    public class GetAllUsersAsyncTests : AuthenticatedRepositoryTests
+    {
+        [Fact(DisplayName = "GetAllUsersAsync should return users with roles")]
+        public async Task GetAllUsersAsync_Should_Return_Users_With_Roles()
+        {
+            // Arrange
+            var user1 = new User { Id = "1", Email = "user1@example.com", PhoneNumber ="+5540028922" };
+            user1.SetName("Name 1");
+            user1.SetLastName("Last Name 1");
+            user1.SetCpf("123.456.789-10");
+            user1.SetRole("Admin");
+            var user2 = new User { Id = "2", Email = "user2@example.com",PhoneNumber ="+5540028921" };
+            user2.SetName("Name 2");
+            user2.SetLastName("Last Name 2");
+            user1.SetCpf("123.456.789-11");
+            user1.SetRole("User");
+
+            _appDbContext.Users.AddRange(user1, user2);
+            await _appDbContext.SaveChangesAsync();
+
+            _userManagerMock.Setup(um => um.GetRolesAsync(It.IsAny<User>())).ReturnsAsync(new List<string> { "Admin" });
+
+            // Act
+            var result = await _authenticatedRepository.GetAllUsersAsync();
+
+            // Assert
+            var enumerable = result as User[] ?? result.ToArray();
+            enumerable.Should().HaveCount(2);
+            enumerable.First().Role.Should().Be("Admin");
+            _userManagerMock.Verify(um => um.GetRolesAsync(It.IsAny<User>()), Times.Exactly(2));
+        }
+
+        [Fact(DisplayName = "GetAllUsersAsync should handle empty user list")]
+        public async Task GetAllUsersAsync_Should_Handle_Empty_User_List()
+        {
+            // Act
+            var result = await _authenticatedRepository.GetAllUsersAsync();
+
+            // Assert
+            result.Should().BeEmpty();
+            _userManagerMock.Verify(um => um.GetRolesAsync(It.IsAny<User>()), Times.Never);
+        }
     }
 
     public class AuthenticateAsyncTests : AuthenticatedRepositoryTests

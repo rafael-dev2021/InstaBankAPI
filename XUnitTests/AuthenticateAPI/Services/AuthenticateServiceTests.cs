@@ -4,6 +4,7 @@ using AuthenticateAPI.Models;
 using AuthenticateAPI.Repositories.Interfaces;
 using AuthenticateAPI.Security;
 using AuthenticateAPI.Services;
+using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -15,13 +16,98 @@ namespace XUnitTests.AuthenticateAPI.Services
         private readonly Mock<ITokenService> _tokenServiceMock;
         private readonly AuthenticateService _authenticateService;
         private readonly Mock<ILogger<AuthenticateService>> _loggerMock;
+        private readonly Mock<IMapper> _mapperMock;
+
 
         protected AuthenticateServiceTests()
         {
             _repositoryMock = new Mock<IAuthenticatedRepository>();
             _tokenServiceMock = new Mock<ITokenService>();
             _loggerMock = new Mock<ILogger<AuthenticateService>>();
-            _authenticateService = new AuthenticateService(_repositoryMock.Object, _tokenServiceMock.Object, _loggerMock.Object);
+            _mapperMock = new Mock<IMapper>();
+            _authenticateService = new AuthenticateService(
+                _repositoryMock.Object,
+                _tokenServiceMock.Object,
+                _loggerMock.Object,
+                _mapperMock.Object
+            );
+        }
+
+        public class GetAllUsersDtoAsyncTests : AuthenticateServiceTests
+        {
+            [Fact]
+            public async Task GetAllUsersDtoAsync_ShouldReturnMappedUserDtos_WhenUsersExist()
+            {
+                // Arrange
+                var user1 = new User { Id = "1", Email = "user1@example.com" };
+                user1.SetName("Name 1");
+                user1.SetLastName("Last Name 1");
+                user1.SetRole("Admin");
+
+                var user2 = new User { Id = "2", Email = "user2@example.com" };
+                user2.SetName("Name 2");
+                user2.SetLastName("Last Name 2");
+                user2.SetRole("User");
+
+                var users = new List<User>
+                {
+                    user1,
+                    user2
+                };
+
+                var userDtos = new List<UserDtoResponse>
+                {
+                    new UserDtoResponse("1", "Name 1", "Last Name 1", "user1@example.com", "Admin"),
+                    new UserDtoResponse("2", "Name 2", "Last Name 2", "user2@example.com", "User")
+                };
+
+                _repositoryMock.Setup(r => r.GetAllUsersAsync()).ReturnsAsync(users);
+                _mapperMock.Setup(m => m.Map<IEnumerable<UserDtoResponse>>(users)).Returns(userDtos);
+
+                // Act
+                var result = await _authenticateService.GetAllUsersDtoAsync();
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.Equal(userDtos, result);
+
+                // Verify logging
+                _loggerMock.Verify(
+                    x => x.Log(
+                        LogLevel.Information,
+                        It.IsAny<EventId>(),
+                        It.Is<It.IsAnyType>((o, t) => o.ToString() == "Returning all users"),
+                        It.IsAny<Exception>(),
+                        ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
+                    Times.Once);
+            }
+
+            [Fact]
+            public async Task GetAllUsersDtoAsync_ShouldReturnEmptyList_WhenNoUsersExist()
+            {
+                // Arrange
+                var users = new List<User>();
+
+                _repositoryMock.Setup(r => r.GetAllUsersAsync()).ReturnsAsync(users);
+                _mapperMock.Setup(m => m.Map<IEnumerable<UserDtoResponse>>(users)).Returns(new List<UserDtoResponse>());
+
+                // Act
+                var result = await _authenticateService.GetAllUsersDtoAsync();
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.Empty(result);
+
+                // Verify logging
+                _loggerMock.Verify(
+                    x => x.Log(
+                        LogLevel.Information,
+                        It.IsAny<EventId>(),
+                        It.Is<It.IsAnyType>((o, t) => o.ToString() == "Returning all users"),
+                        It.IsAny<Exception>(),
+                        ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
+                    Times.Once);
+            }
         }
 
         public class LoginAsyncTests : AuthenticateServiceTests
@@ -61,7 +147,8 @@ namespace XUnitTests.AuthenticateAPI.Services
                     x => x.Log(
                         LogLevel.Information,
                         It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>((o, t) => o.ToString() == $"LoginAsync called with email: {loginRequest.Email}"),
+                        It.Is<It.IsAnyType>((o, t) =>
+                            o.ToString() == $"LoginAsync called with email: {loginRequest.Email}"),
                         It.IsAny<Exception>(),
                         ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
                     Times.Once);
@@ -70,7 +157,8 @@ namespace XUnitTests.AuthenticateAPI.Services
                     x => x.Log(
                         LogLevel.Information,
                         It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>((o, t) => o.ToString() == $"Login successful for email: {loginRequest.Email}"),
+                        It.Is<It.IsAnyType>((o, t) =>
+                            o.ToString() == $"Login successful for email: {loginRequest.Email}"),
                         It.IsAny<Exception>(),
                         ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
                     Times.Once);
@@ -97,7 +185,9 @@ namespace XUnitTests.AuthenticateAPI.Services
                     x => x.Log(
                         LogLevel.Warning,
                         It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>((o, t) => o.ToString() == $"Authentication failed for email: {loginRequest.Email} with message: {authResponse.Message}"),
+                        It.Is<It.IsAnyType>((o, t) =>
+                            o.ToString() ==
+                            $"Authentication failed for email: {loginRequest.Email} with message: {authResponse.Message}"),
                         It.IsAny<Exception>(),
                         ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
                     Times.Once);
@@ -142,7 +232,8 @@ namespace XUnitTests.AuthenticateAPI.Services
                     x => x.Log(
                         LogLevel.Information,
                         It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>((o, t) => o.ToString() == $"RegisterAsync called with email: {registerRequest.Email}"),
+                        It.Is<It.IsAnyType>((o, t) =>
+                            o.ToString() == $"RegisterAsync called with email: {registerRequest.Email}"),
                         It.IsAny<Exception>(),
                         ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
                     Times.Once);
@@ -151,7 +242,8 @@ namespace XUnitTests.AuthenticateAPI.Services
                     x => x.Log(
                         LogLevel.Information,
                         It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>((o, t) => o.ToString() == $"Registration successful for email: {registerRequest.Email}"),
+                        It.Is<It.IsAnyType>((o, t) =>
+                            o.ToString() == $"Registration successful for email: {registerRequest.Email}"),
                         It.IsAny<Exception>(),
                         ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
                     Times.Once);
@@ -179,7 +271,9 @@ namespace XUnitTests.AuthenticateAPI.Services
                     x => x.Log(
                         LogLevel.Warning,
                         It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>((o, t) => o.ToString() == $"Registration failed for email: {registerRequest.Email} with message: {registerResponse.Message}"),
+                        It.Is<It.IsAnyType>((o, t) =>
+                            o.ToString() ==
+                            $"Registration failed for email: {registerRequest.Email} with message: {registerResponse.Message}"),
                         It.IsAny<Exception>(),
                         ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
                     Times.Once);
@@ -233,7 +327,8 @@ namespace XUnitTests.AuthenticateAPI.Services
                     x => x.Log(
                         LogLevel.Information,
                         It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>((o, t) => o.ToString() == $"Profile update successful for userId: {user.Id}"),
+                        It.Is<It.IsAnyType>(
+                            (o, t) => o.ToString() == $"Profile update successful for userId: {user.Id}"),
                         It.IsAny<Exception>(),
                         ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
                     Times.Once);
@@ -261,7 +356,9 @@ namespace XUnitTests.AuthenticateAPI.Services
                     x => x.Log(
                         LogLevel.Warning,
                         It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>((o, t) => o.ToString() == $"Profile update failed for userId: 1 with message: {updateResponse.Message}"),
+                        It.Is<It.IsAnyType>((o, t) =>
+                            o.ToString() ==
+                            $"Profile update failed for userId: 1 with message: {updateResponse.Message}"),
                         It.IsAny<Exception>(),
                         ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
                     Times.Once);
@@ -274,7 +371,8 @@ namespace XUnitTests.AuthenticateAPI.Services
             public async Task ChangePasswordAsync_ShouldReturnTrue_WhenPasswordChangeIsSuccessful()
             {
                 // Arrange
-                var changePasswordRequest = new ChangePasswordDtoRequest("test@example.com", "oldPassword", "newPassword");
+                var changePasswordRequest =
+                    new ChangePasswordDtoRequest("test@example.com", "oldPassword", "newPassword");
 
                 _repositoryMock.Setup(r => r.ChangePasswordAsync(It.IsAny<ChangePasswordDtoRequest>()))
                     .ReturnsAsync(true);
@@ -290,7 +388,8 @@ namespace XUnitTests.AuthenticateAPI.Services
                     x => x.Log(
                         LogLevel.Information,
                         It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>((o, t) => o.ToString() == $"ChangePasswordAsync called for email: {changePasswordRequest.Email}"),
+                        It.Is<It.IsAnyType>((o, t) =>
+                            o.ToString() == $"ChangePasswordAsync called for email: {changePasswordRequest.Email}"),
                         It.IsAny<Exception>(),
                         ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
                     Times.Once);
@@ -299,7 +398,8 @@ namespace XUnitTests.AuthenticateAPI.Services
                     x => x.Log(
                         LogLevel.Information,
                         It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>((o, t) => o.ToString() == $"Password change successful for email: {changePasswordRequest.Email}"),
+                        It.Is<It.IsAnyType>((o, t) =>
+                            o.ToString() == $"Password change successful for email: {changePasswordRequest.Email}"),
                         It.IsAny<Exception>(),
                         ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
                     Times.Once);
@@ -309,7 +409,8 @@ namespace XUnitTests.AuthenticateAPI.Services
             public async Task ChangePasswordAsync_ShouldReturnFalse_WhenPasswordChangeFails()
             {
                 // Arrange
-                var changePasswordRequest = new ChangePasswordDtoRequest("test@example.com", "oldPassword", "newPassword");
+                var changePasswordRequest =
+                    new ChangePasswordDtoRequest("test@example.com", "oldPassword", "newPassword");
 
                 _repositoryMock.Setup(r => r.ChangePasswordAsync(It.IsAny<ChangePasswordDtoRequest>()))
                     .ReturnsAsync(false);
@@ -325,7 +426,8 @@ namespace XUnitTests.AuthenticateAPI.Services
                     x => x.Log(
                         LogLevel.Warning,
                         It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>((o, t) => o.ToString() == $"Password change failed for email: {changePasswordRequest.Email}"),
+                        It.Is<It.IsAnyType>((o, t) =>
+                            o.ToString() == $"Password change failed for email: {changePasswordRequest.Email}"),
                         It.IsAny<Exception>(),
                         ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
                     Times.Once);
