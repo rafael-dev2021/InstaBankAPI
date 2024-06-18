@@ -39,6 +39,7 @@ public class UserRoleRepository(RoleManager<IdentityRole> roleManager, UserManag
             user.SetName("Rafael");
             user.SetLastName("Silva");
             user.SetCpf("123.456.789-01");
+            user.SetRole(roleName);
 
             var result = await userManager.CreateAsync(user, "@Visual24k+");
             if (result.Succeeded)
