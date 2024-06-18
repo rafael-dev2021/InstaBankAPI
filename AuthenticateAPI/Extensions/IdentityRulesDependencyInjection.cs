@@ -35,10 +35,8 @@ public static class IdentityRulesDependencyInjection
             options.RequiredUniqueChars = 6;
         });
 
-        service.AddAuthorization(options =>
-        {
-            options.AddPolicy("Admin", policy => { policy.RequireRole("Admin"); });
-        });
+        service.AddAuthorizationBuilder()
+            .AddPolicy("Admin", policy => { policy.RequireRole("Admin"); });
 
         service.AddHttpsRedirection(options => { options.HttpsPort = null; });
 
