@@ -397,5 +397,8 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
+AuthenticateAPI/.env
 
+
+../.idea/.idea.InstaBankAPI/Docker/
 
