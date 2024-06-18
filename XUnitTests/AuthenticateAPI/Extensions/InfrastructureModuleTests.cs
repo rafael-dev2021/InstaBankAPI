@@ -11,13 +11,35 @@ namespace XUnitTests.AuthenticateAPI.Extensions;
 public class InfrastructureModuleTests
 {
     private readonly IServiceProvider _serviceProvider;
+    private readonly GenerateKey _generateKey = new();
 
     public InfrastructureModuleTests()
     {
         var serviceCollection = new ServiceCollection();
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection().Build();
 
-        serviceCollection.AddInfrastructureModule(configuration);
+        Environment.SetEnvironmentVariable("DB_PASSWORD", "TestPassword");
+        Environment.SetEnvironmentVariable("SECRET_KEY", GenerateKey.GenerateHmac256Key());
+        Environment.SetEnvironmentVariable("ISSUER", "http://localhost");
+        Environment.SetEnvironmentVariable("AUDIENCE", "http://localhost");
+        Environment.SetEnvironmentVariable("EXPIRES_TOKEN", "15");
+        Environment.SetEnvironmentVariable("EXPIRES_REFRESHTOKEN", "30");
+
+        new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string>
+            {
+                {
+                    "ConnectionStrings:DefaultConnection",
+                    "Server=(localdb)\\mssqllocaldb;Database=InMemoryDbForTesting;Trusted_Connection=True;"
+                },
+                { "Jwt:SecretKey", "SuperSecretKey12345" },
+                { "Jwt:Issuer", "http://localhost" },
+                { "Jwt:Audience", "http://localhost" },
+                { "EXPIRES_TOKEN", "15" },
+                { "EXPIRES_REFRESHTOKEN", "30" }
+            }!)
+            .Build();
+
+        serviceCollection.AddInfrastructureModule();
 
         _serviceProvider = serviceCollection.BuildServiceProvider();
     }

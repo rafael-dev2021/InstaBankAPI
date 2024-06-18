@@ -1,6 +1,5 @@
 ﻿using AuthenticateAPI.Extensions;
 using AuthenticateAPI.Security;
-using AuthenticateAPI.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -13,18 +12,25 @@ namespace XUnitTests.AuthenticateAPI.Extensions;
 public class DependencyInjectionJwtTests
 {
     private readonly IConfiguration _configuration;
+    private readonly GenerateKey _generateKey = new();
 
     public DependencyInjectionJwtTests()
     {
-        var inMemorySettings = new Dictionary<string, string>
-        {
-            { "Jwt:SecretKey", "SuperSecretKey12345" },
-            { "Jwt:Issuer", "http://localhost" },
-            { "Jwt:Audience", "http://localhost" }
-        };
+        Environment.SetEnvironmentVariable("SECRET_KEY", GenerateKey.GenerateHmac256Key());
+        Environment.SetEnvironmentVariable("ISSUER", "http://localhost");
+        Environment.SetEnvironmentVariable("AUDIENCE", "http://localhost");
+        Environment.SetEnvironmentVariable("EXPIRES_TOKEN", "15");
+        Environment.SetEnvironmentVariable("EXPIRES_REFRESHTOKEN", "30");
 
         _configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(inMemorySettings!)
+            .AddInMemoryCollection(new Dictionary<string, string>
+            {
+                { "Jwt:SecretKey", "SuperSecretKey12345" },
+                { "Jwt:Issuer", "http://localhost" },
+                { "Jwt:Audience", "http://localhost" },
+                { "EXPIRES_TOKEN", "15" },
+                { "EXPIRES_REFRESHTOKEN", "30" }
+            }!)
             .Build();
     }
 
@@ -33,11 +39,11 @@ public class DependencyInjectionJwtTests
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddLogging(); 
-        services.AddSingleton(_configuration); 
+        services.AddLogging();
+        services.AddSingleton(_configuration);
 
         // Act
-        services.AddDependencyInjectionJwt(_configuration);
+        services.AddDependencyInjectionJwt();
         var serviceProvider = services.BuildServiceProvider();
 
         // Assert
@@ -60,7 +66,7 @@ public class DependencyInjectionJwtTests
         Assert.Equal("http://localhost", jwtOptions.TokenValidationParameters.ValidAudience);
         Assert.NotNull(jwtOptions.TokenValidationParameters.IssuerSigningKey);
     }
-    
+
     [Fact]
     public void AddDependencyInjectionJwt_ShouldAddAuthorization()
     {
@@ -70,7 +76,7 @@ public class DependencyInjectionJwtTests
         services.AddSingleton(_configuration);
 
         // Act
-        services.AddDependencyInjectionJwt(_configuration);
+        services.AddDependencyInjectionJwt();
         var serviceProvider = services.BuildServiceProvider();
 
         // Assert
