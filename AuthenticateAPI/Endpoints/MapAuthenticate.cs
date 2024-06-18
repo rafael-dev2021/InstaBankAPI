@@ -25,7 +25,7 @@ public static class MapAuthenticate
                 var location = $"/v1/users/{request.Email}";
                 return Results.Created(location, response);
             },
-            StatusCodes.Status201Created 
+            StatusCodes.Status201Created
         );
 
         MapAuthorizedEndpoint<UpdateUserDtoRequest>(
@@ -39,6 +39,20 @@ public static class MapAuthenticate
             "/v1/auth/change-password",
             async (service, request, _) => await service.ChangePasswordAsync(request)
         );
+
+        MapGetEndpoint(
+            app,
+            "/v1/auth/users",
+            async service => await service.GetAllUsersDtoAsync());
+    }
+
+    private static void MapGetEndpoint(
+        WebApplication app,
+        string route,
+        Func<IAuthenticateService, Task<object>> handler)
+    {
+        app.MapGet(route, [Authorize("Admin")] async (
+            [FromServices] IAuthenticateService service) => await handler(service));
     }
 
     private static void MapPostEndpoint<T>(
