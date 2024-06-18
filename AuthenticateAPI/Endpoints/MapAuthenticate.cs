@@ -27,6 +27,25 @@ public static class MapAuthenticate
             },
             StatusCodes.Status201Created
         );
+        
+        MapPostEndpoint<ForgotPasswordDtoRequest>(
+            app,
+            "/v1/auth/forgot-password",
+            async (service, request) =>
+            {
+                var success = await service.ForgotPasswordAsync(request.Email, request.NewPassword);
+                return Results.Ok(success);
+            }
+        );
+
+        MapPostEndpoint(
+            app,
+            "/v1/auth/logout",
+            async service =>
+            {
+                await service.LogoutAsync();
+                return Results.NoContent();
+            });
 
         MapAuthorizedEndpoint<UpdateUserDtoRequest>(
             app,
@@ -73,6 +92,28 @@ public static class MapAuthenticate
             }
 
             return await HandleRequestAsync(service, handler, request, expectedStatusCode);
+        });
+    }
+
+    private static void MapPostEndpoint(
+        WebApplication app,
+        string route,
+        Func<IAuthenticateService, Task<object>> handler,
+        int expectedStatusCode = StatusCodes.Status204NoContent)
+    {
+        app.MapPost(route, async (
+            [FromServices] IAuthenticateService service) =>
+        {
+            try
+            {
+                await handler(service);
+                return Results.StatusCode(expectedStatusCode);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                var errorResponse = new Dictionary<string, string> { { "Message", ex.Message } };
+                return Results.Json(errorResponse, statusCode: StatusCodes.Status400BadRequest);
+            }
         });
     }
 
