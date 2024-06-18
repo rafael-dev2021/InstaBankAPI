@@ -1,0 +1,23 @@
+# This is a generated file. Not intended for manual editing.
+version: "3.8"
+services:
+  app:
+    build:
+      context: "C:\\c#\\InstaBankAPI\\AuthenticateAPI"
+      dockerfile: "Dockerfile"
+      target: "build-env"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/AuthenticateAPI.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_STATICWEBASSETS: "/app/bin/Debug/net8.0/AuthenticateAPI.staticwebassets.runtime.CT.json"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "authenticateapi:dev"
+    ports: []
+    volumes:
+    - "C:\\Users\\ainbo\\.nuget\\packages:/root/.nuget/packages"
+    - "C:\\c#\\InstaBankAPI\\AuthenticateAPI:/app:rw"
+    - "C:\\c#\\InstaBankAPI:/src:rw"
+    working_dir: "/app"
