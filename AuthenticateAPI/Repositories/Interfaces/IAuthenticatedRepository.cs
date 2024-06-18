@@ -6,6 +6,7 @@ namespace AuthenticateAPI.Repositories.Interfaces;
 
 public interface IAuthenticatedRepository
 {
+    Task<IEnumerable<User>> GetAllUsersAsync();
     Task<AuthenticatedDtoResponse> AuthenticateAsync(LoginDtoRequest loginDtoRequest);
     Task<RegisteredDtoResponse> RegisterAsync(RegisterDtoRequest request);
     Task<UpdatedDtoResponse> UpdateProfileAsync(UpdateUserDtoRequest updateUserDtoRequest, string userId);

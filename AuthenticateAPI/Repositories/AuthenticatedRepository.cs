@@ -1,8 +1,10 @@
-﻿using AuthenticateAPI.Dto.Request;
+﻿using AuthenticateAPI.Context;
+using AuthenticateAPI.Dto.Request;
 using AuthenticateAPI.Dto.Response;
 using AuthenticateAPI.Models;
 using AuthenticateAPI.Repositories.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace AuthenticateAPI.Repositories;
 
@@ -11,9 +13,36 @@ public class AuthenticatedRepository(
     UserManager<User> userManager,
     IAuthenticatedStrategy authenticatedStrategy,
     IRegisterStrategy registerStrategy,
-    IUpdateProfileStrategy updateProfileStrategy) :
+    IUpdateProfileStrategy updateProfileStrategy,
+    AppDbContext appDbContext) :
     IAuthenticatedRepository
 {
+    public async Task<IEnumerable<User>> GetAllUsersAsync()
+    {
+        var users = await appDbContext.Users.AsNoTracking().ToListAsync();
+
+        var usersWithRoles = new List<User>();
+
+        foreach (var user in users)
+        {
+            var roles = await userManager.GetRolesAsync(user);
+            var userWithRole = new User
+            {
+                Id = user.Id,
+                Email = user.Email
+            };
+            userWithRole.SetName(user.Name);
+            userWithRole.SetLastName(user.LastName);
+            userWithRole.SetCpf(user.Cpf);
+            userWithRole.SetPhoneNumber(user.PhoneNumber!);
+            userWithRole.SetRole(roles.FirstOrDefault());
+
+            usersWithRoles.Add(userWithRole);
+        }
+
+        return usersWithRoles;
+    }
+
     public async Task<AuthenticatedDtoResponse> AuthenticateAsync(LoginDtoRequest loginDtoRequest)
     {
         return await authenticatedStrategy.AuthenticatedAsync(loginDtoRequest);
@@ -40,7 +69,8 @@ public class AuthenticatedRepository(
         var user = await userManager.FindByEmailAsync(changePasswordDtoRequest.Email!);
         if (user == null) return false;
         var changePasswordResult =
-            await userManager.ChangePasswordAsync(user, changePasswordDtoRequest.CurrentPassword!, changePasswordDtoRequest.NewPassword!);
+            await userManager.ChangePasswordAsync(user, changePasswordDtoRequest.CurrentPassword!,
+                changePasswordDtoRequest.NewPassword!);
 
         return changePasswordResult.Succeeded;
     }
