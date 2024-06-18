@@ -1,9 +1,9 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using AuthenticateAPI.Models;
 using AuthenticateAPI.Security;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
@@ -14,16 +14,18 @@ public class TokenServiceTests
 {
     private readonly JwtSettings _jwtSettings;
     private readonly Mock<ILogger<TokenService>> _loggerMock;
+    private readonly GenerateKey _generateKey = new();
 
     protected TokenServiceTests()
     {
-        var configurationBuilder = new ConfigurationBuilder()
-            .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.json");
-
-        var configuration = configurationBuilder.Build();
-        _jwtSettings = new JwtSettings();
-        configuration.Bind("Jwt", _jwtSettings);
+        _jwtSettings = new JwtSettings
+        {
+            SecretKey = GenerateKey.GenerateHmac256Key(),
+            Issuer = "http://localhost",
+            Audience = "http://localhost",
+            ExpirationTokenMinutes = 15,
+            RefreshTokenExpirationMinutes = 30
+        };
 
         _loggerMock = new Mock<ILogger<TokenService>>();
     }
