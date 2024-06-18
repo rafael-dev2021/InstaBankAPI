@@ -15,7 +15,16 @@ public class InfrastructureModuleTests
     public InfrastructureModuleTests()
     {
         var serviceCollection = new ServiceCollection();
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection().Build();
+
+        // Set the environment variable for the test
+        Environment.SetEnvironmentVariable("DB_PASSWORD", "TestPassword");
+
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string>
+            {
+                {"ConnectionStrings:DefaultConnection", "Server=(localdb)\\mssqllocaldb;Database=InMemoryDbForTesting;Trusted_Connection=True;"}
+            }!)
+            .Build();
 
         serviceCollection.AddInfrastructureModule(configuration);
 
