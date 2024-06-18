@@ -1,6 +1,7 @@
 using System.Text;
 using AuthenticateAPI.Security;
 using AuthenticateAPI.Services;
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -8,10 +9,17 @@ namespace AuthenticateAPI.Extensions;
 
 public static class DependencyInjectionJwt
 {
-    public static void AddDependencyInjectionJwt(this IServiceCollection service,
-        IConfiguration configuration)
+    public static void AddDependencyInjectionJwt(this IServiceCollection service)
     {
-        var key = Encoding.ASCII.GetBytes(configuration["Jwt:SecretKey"] ?? string.Empty);
+        Env.Load();
+
+        var secretKey = Environment.GetEnvironmentVariable("SECRET_KEY");
+        var issuer = Environment.GetEnvironmentVariable("ISSUER");
+        var audience = Environment.GetEnvironmentVariable("AUDIENCE");
+        var expirationTokenMinutes = Environment.GetEnvironmentVariable("EXPIRES_TOKEN");
+        var expirationRefreshTokenMinutes = Environment.GetEnvironmentVariable("EXPIRES_REFRESHTOKEN");
+
+        var key = Encoding.ASCII.GetBytes(secretKey!);
 
         service.AddAuthentication(options =>
         {
@@ -27,19 +35,25 @@ public static class DependencyInjectionJwt
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = configuration["Jwt:Issuer"],
-                ValidAudience = configuration["Jwt:Audience"],
+                ValidIssuer = issuer,
+                ValidAudience = audience,
                 IssuerSigningKey = new SymmetricSecurityKey(key)
             };
         });
 
-        service.AddTransient<ITokenService,TokenService>();
-        service.AddTransient<IAuthenticateService,AuthenticateService>();
+        service.AddTransient<ITokenService, TokenService>();
+        service.AddTransient<IAuthenticateService, AuthenticateService>();
 
-        var jwtSettings = new JwtSettings();
-        configuration.Bind("Jwt", jwtSettings);
+        var jwtSettings = new JwtSettings
+        {
+            SecretKey = secretKey,
+            Issuer = issuer,
+            Audience = audience,
+            ExpirationTokenMinutes = int.Parse(expirationTokenMinutes!), 
+            RefreshTokenExpirationMinutes = int.Parse(expirationRefreshTokenMinutes!) 
+        };
         service.AddSingleton(jwtSettings);
-        
+
         service.AddAuthorization();
     }
 }
