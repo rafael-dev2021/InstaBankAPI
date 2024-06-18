@@ -10,4 +10,6 @@ public interface IAuthenticateService
     Task<TokenDtoResponse> RegisterAsync(RegisterDtoRequest request);
     Task<TokenDtoResponse> UpdateAsync(UpdateUserDtoRequest request, string userId);
     Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest request);
+    Task LogoutAsync();
+    Task<bool> ForgotPasswordAsync(string email, string newPassword);
 }

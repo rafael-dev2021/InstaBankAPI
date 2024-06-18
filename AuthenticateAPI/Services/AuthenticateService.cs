@@ -94,4 +94,18 @@ public class AuthenticateService(
 
         return result;
     }
+
+    public Task LogoutAsync()
+    {
+        logger.LogInformation("LogoutAsync called");
+        
+        return repository.LogoutAsync();
+    }
+
+    public async Task<bool> ForgotPasswordAsync(string email, string newPassword)
+    {
+        logger.LogInformation("ForgotPasswordAsync called for email: {Email}", email);
+
+       return await repository.ForgotPasswordAsync(email, newPassword);
+    }
 }
