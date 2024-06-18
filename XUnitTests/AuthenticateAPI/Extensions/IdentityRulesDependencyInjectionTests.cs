@@ -1,6 +1,7 @@
 ﻿using AuthenticateAPI.Context;
 using AuthenticateAPI.Extensions;
 using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Http;
@@ -96,4 +97,23 @@ public class IdentityRulesDependencyInjectionTests
         Assert.Equal(8, passwordOptions.RequiredLength);
         Assert.Equal(6, passwordOptions.RequiredUniqueChars);
     }
+    
+    [Fact]
+    public void Test_ApplicationCookieOptions_AreConfigured()
+    {
+        var optionsSnapshot = _serviceProvider.GetRequiredService<IOptionsSnapshot<CookieAuthenticationOptions>>();
+        var options = optionsSnapshot.Get(IdentityConstants.ApplicationScheme);
+
+        Assert.True(options.Cookie.HttpOnly);
+        Assert.Equal(CookieSecurePolicy.Always, options.Cookie.SecurePolicy);
+        Assert.Equal(SameSiteMode.Strict, options.Cookie.SameSite);
+        Assert.True(options.Cookie.IsEssential);
+        Assert.Equal("/Account/Login", options.LoginPath);
+        Assert.Equal("/Account/Logout", options.LogoutPath);
+        Assert.Equal("/Account/AccessDenied", options.AccessDeniedPath);
+        Assert.True(options.SlidingExpiration);
+        Assert.Equal(TimeSpan.FromMinutes(30), options.ExpireTimeSpan);
+    }
+
+
 }

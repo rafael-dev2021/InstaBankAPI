@@ -433,5 +433,65 @@ namespace XUnitTests.AuthenticateAPI.Services
                     Times.Once);
             }
         }
+        
+        public class LogoutAsyncTests : AuthenticateServiceTests
+        {
+            [Fact]
+            public async Task LogoutAsync_ShouldCallRepositoryAndLog()
+            {
+                // Arrange
+                _repositoryMock.Setup(r => r.LogoutAsync()).Returns(Task.CompletedTask);
+
+                // Act
+                await _authenticateService.LogoutAsync();
+
+                // Assert
+                _repositoryMock.Verify(
+                    r => r.LogoutAsync(),
+                    Times.Once);
+
+                _loggerMock.Verify(
+                    x => x.Log(
+                        LogLevel.Information,
+                        It.IsAny<EventId>(),
+                        It.Is<It.IsAnyType>((o, t) =>
+                            o.ToString() == "LogoutAsync called"),
+                        null,
+                        ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
+                    Times.Once);
+            } 
+        }
+
+        public class ForgotPasswordAsyncTests : AuthenticateServiceTests
+        {
+            [Fact]
+            public async Task ForgotPasswordAsync_ShouldCallRepositoryAndLog()
+            {
+                // Arrange
+                const string email = "test@example.com";
+                const string newPassword = "newPassword";
+                _repositoryMock.Setup(r => r.ForgotPasswordAsync(email, newPassword)).ReturnsAsync(true);
+
+                // Act
+                var result = await _authenticateService.ForgotPasswordAsync(email, newPassword);
+
+                // Assert
+                Assert.True(result);
+
+                _repositoryMock.Verify(
+                    r => r.ForgotPasswordAsync(email, newPassword),
+                    Times.Once);
+
+                _loggerMock.Verify(
+                    x => x.Log(
+                        LogLevel.Information,
+                        It.IsAny<EventId>(),
+                        It.Is<It.IsAnyType>((o, t) =>
+                            o.ToString() == $"ForgotPasswordAsync called for email: {email}"),
+                        null,
+                        ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
+                    Times.Once);
+            }
+        }
     }
 }

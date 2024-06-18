@@ -64,16 +64,17 @@ public class AuthenticatedRepositoryTests
         public async Task GetAllUsersAsync_Should_Return_Users_With_Roles()
         {
             // Arrange
-            var user1 = new User { Id = "1", Email = "user1@example.com", PhoneNumber ="+5540028922" };
+            var user1 = new User { Id = "1", Email = "user1@example.com", PhoneNumber = "+5540028922" };
             user1.SetName("Name 1");
             user1.SetLastName("Last Name 1");
             user1.SetCpf("123.456.789-10");
             user1.SetRole("Admin");
-            var user2 = new User { Id = "2", Email = "user2@example.com",PhoneNumber ="+5540028921" };
+
+            var user2 = new User { Id = "2", Email = "user2@example.com", PhoneNumber = "+5540028921" };
             user2.SetName("Name 2");
             user2.SetLastName("Last Name 2");
-            user1.SetCpf("123.456.789-11");
-            user1.SetRole("User");
+            user2.SetCpf("123.456.789-11"); 
+            user2.SetRole("User"); 
 
             _appDbContext.Users.AddRange(user1, user2);
             await _appDbContext.SaveChangesAsync();

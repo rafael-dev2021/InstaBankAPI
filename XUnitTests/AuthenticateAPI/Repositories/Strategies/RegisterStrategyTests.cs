@@ -43,6 +43,7 @@ public class RegisterStrategyTests : IDisposable
         existingUser.SetName("Test");
         existingUser.SetLastName("Test");
         existingUser.SetCpf("123.456.789-10");
+        existingUser.SetRole("Admin");
         await _appDbContext.Users.AddAsync(existingUser);
         await _appDbContext.SaveChangesAsync();
 
@@ -112,6 +113,7 @@ public class RegisterStrategyTests : IDisposable
         existingUser.SetName("Test");
         existingUser.SetLastName("Test");
         existingUser.SetCpf("123.456.789-10");
+        existingUser.SetRole("Admin");
         await _appDbContext.Users.AddAsync(existingUser);
         await _appDbContext.SaveChangesAsync();
 

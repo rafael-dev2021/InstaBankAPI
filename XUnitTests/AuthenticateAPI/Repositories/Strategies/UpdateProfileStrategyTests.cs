@@ -40,6 +40,7 @@ public class UpdateProfileStrategyTests : IDisposable
         existingUser.SetName("NewName");
         existingUser.SetLastName("NewLastName");
         existingUser.SetCpf("123.456.789-10");
+        existingUser.SetRole("Admin");
 
         await _appDbContext.Users.AddAsync(existingUser);
         await _appDbContext.SaveChangesAsync();
@@ -73,6 +74,7 @@ public class UpdateProfileStrategyTests : IDisposable
         existingUser.SetName("ExistingName");
         existingUser.SetLastName("ExistingLastName");
         existingUser.SetCpf("123.456.789-10");
+        existingUser.SetRole("Admin"); 
 
         var anotherUser = new User
         {
@@ -83,6 +85,7 @@ public class UpdateProfileStrategyTests : IDisposable
         anotherUser.SetName("AnotherName");
         anotherUser.SetLastName("AnotherLastName");
         anotherUser.SetCpf("987.654.321-00");
+        anotherUser.SetRole("Admin"); 
 
         await _appDbContext.Users.AddAsync(existingUser);
         await _appDbContext.Users.AddAsync(anotherUser);
@@ -116,6 +119,7 @@ public class UpdateProfileStrategyTests : IDisposable
         };
         existingUser.SetName("OldName");
         existingUser.SetLastName("OldLastName");
+        existingUser.SetRole("Admin");
 
         await _appDbContext.Users.AddAsync(existingUser);
         await _appDbContext.SaveChangesAsync();
@@ -150,6 +154,7 @@ public class UpdateProfileStrategyTests : IDisposable
         };
         existingUser.SetName("OldName");
         existingUser.SetLastName("OldLastName");
+        existingUser.SetRole("Admin");
 
         await _appDbContext.Users.AddAsync(existingUser);
         await _appDbContext.SaveChangesAsync();
