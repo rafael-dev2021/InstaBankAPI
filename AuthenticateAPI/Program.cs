@@ -4,7 +4,7 @@ using AuthenticateAPI.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddInfrastructureModule(builder.Configuration);
+builder.Services.AddInfrastructureModule();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
