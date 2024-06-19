@@ -82,6 +82,11 @@ namespace AuthenticateAPI.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 

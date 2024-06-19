@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AuthenticateAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20240612220928_TestTable")]
-    partial class TestTable
+    [Migration("20240618231259_Table")]
+    partial class Table
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -84,6 +84,11 @@ namespace AuthenticateAPI.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AuthenticateAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class TestTable : Migration
+    public partial class Table : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -33,6 +33,7 @@ namespace AuthenticateAPI.Migrations
                     Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     LastName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Cpf = table.Column<string>(type: "nvarchar(14)", maxLength: 14, nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),

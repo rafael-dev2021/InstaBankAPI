@@ -25,8 +25,27 @@ public static class MapAuthenticate
                 var location = $"/v1/users/{request.Email}";
                 return Results.Created(location, response);
             },
-            StatusCodes.Status201Created 
+            StatusCodes.Status201Created
         );
+        
+        MapPostEndpoint<ForgotPasswordDtoRequest>(
+            app,
+            "/v1/auth/forgot-password",
+            async (service, request) =>
+            {
+                var success = await service.ForgotPasswordAsync(request.Email!, request.NewPassword!);
+                return Results.Ok(success);
+            }
+        );
+
+        MapPostEndpoint(
+            app,
+            "/v1/auth/logout",
+            async service =>
+            {
+                await service.LogoutAsync();
+                return Results.NoContent();
+            });
 
         MapAuthorizedEndpoint<UpdateUserDtoRequest>(
             app,
@@ -39,9 +58,23 @@ public static class MapAuthenticate
             "/v1/auth/change-password",
             async (service, request, _) => await service.ChangePasswordAsync(request)
         );
+
+        MapGetEndpoint(
+            app,
+            "/v1/auth/users",
+            async service => await service.GetAllUsersDtoAsync());
     }
 
-    private static void MapPostEndpoint<T>(
+    public static void MapGetEndpoint(
+        WebApplication app,
+        string route,
+        Func<IAuthenticateService, Task<object>> handler)
+    {
+        app.MapGet(route, [Authorize("Admin")] async (
+            [FromServices] IAuthenticateService service) => await handler(service));
+    }
+
+    public static void MapPostEndpoint<T>(
         WebApplication app,
         string route,
         Func<IAuthenticateService, T, Task<object>> handler,
@@ -62,7 +95,29 @@ public static class MapAuthenticate
         });
     }
 
-    private static void MapAuthorizedEndpoint<T>(
+    public static void MapPostEndpoint(
+        WebApplication app,
+        string route,
+        Func<IAuthenticateService, Task<object>> handler,
+        int expectedStatusCode = StatusCodes.Status204NoContent)
+    {
+        app.MapPost(route, async (
+            [FromServices] IAuthenticateService service) =>
+        {
+            try
+            {
+                await handler(service);
+                return Results.StatusCode(expectedStatusCode);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                var errorResponse = new Dictionary<string, string> { { "Message", ex.Message } };
+                return Results.Json(errorResponse, statusCode: StatusCodes.Status400BadRequest);
+            }
+        });
+    }
+
+    public static void MapAuthorizedEndpoint<T>(
         WebApplication app,
         string route,
         Func<IAuthenticateService, T, string, Task<object>> handler) where T : class
@@ -83,7 +138,7 @@ public static class MapAuthenticate
         });
     }
 
-    private static async Task<IResult?> ValidateAsync<T>(T request, IValidator<T> validator)
+    public static async Task<IResult?> ValidateAsync<T>(T request, IValidator<T> validator)
     {
         var result = await validator.ValidateAsync(request);
         return !result.IsValid ? Results.ValidationProblem(result.ToDictionary()) : null;

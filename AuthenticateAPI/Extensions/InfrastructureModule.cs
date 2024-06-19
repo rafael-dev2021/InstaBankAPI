@@ -8,5 +8,7 @@ public static class InfrastructureModule
         service.AddFluentValidationDependencyInjection();
         service.AddDependencyInjectionRepositories();
         service.AddDependencyInjectionJwt();
+        service.AddMappingProfileDependencyInjection();
+        service.AddIdentityRulesDependencyInjection();
     }
 }

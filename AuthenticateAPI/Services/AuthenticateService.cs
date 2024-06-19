@@ -2,14 +2,26 @@ using AuthenticateAPI.Dto.Request;
 using AuthenticateAPI.Dto.Response;
 using AuthenticateAPI.Repositories.Interfaces;
 using AuthenticateAPI.Security;
+using AutoMapper;
 
 namespace AuthenticateAPI.Services;
 
 public class AuthenticateService(
     IAuthenticatedRepository repository,
     ITokenService tokenService,
-    ILogger<AuthenticateService> logger) : IAuthenticateService
+    ILogger<AuthenticateService> logger,
+    IMapper mapper) : IAuthenticateService
 {
+    
+    public async Task<IEnumerable<UserDtoResponse>> GetAllUsersDtoAsync()
+    {
+        var usersDto = await repository.GetAllUsersAsync();
+
+        logger.LogInformation("Returning all users");
+        
+        return !usersDto.Any() ? [] : mapper.Map<IEnumerable<UserDtoResponse>>(usersDto);
+    }
+    
     public async Task<TokenDtoResponse> LoginAsync(LoginDtoRequest request)
     {
         logger.LogInformation("LoginAsync called with email: {Email}", request.Email);
@@ -81,5 +93,19 @@ public class AuthenticateService(
         }
 
         return result;
+    }
+
+    public Task LogoutAsync()
+    {
+        logger.LogInformation("LogoutAsync called");
+        
+        return repository.LogoutAsync();
+    }
+
+    public async Task<bool> ForgotPasswordAsync(string email, string newPassword)
+    {
+        logger.LogInformation("ForgotPasswordAsync called for email: {Email}", email);
+
+       return await repository.ForgotPasswordAsync(email, newPassword);
     }
 }
