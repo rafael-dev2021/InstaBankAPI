@@ -33,7 +33,7 @@ public static class MapAuthenticate
             "/v1/auth/forgot-password",
             async (service, request) =>
             {
-                var success = await service.ForgotPasswordAsync(request.Email, request.NewPassword);
+                var success = await service.ForgotPasswordAsync(request.Email!, request.NewPassword!);
                 return Results.Ok(success);
             }
         );
@@ -65,7 +65,7 @@ public static class MapAuthenticate
             async service => await service.GetAllUsersDtoAsync());
     }
 
-    private static void MapGetEndpoint(
+    public static void MapGetEndpoint(
         WebApplication app,
         string route,
         Func<IAuthenticateService, Task<object>> handler)
@@ -74,7 +74,7 @@ public static class MapAuthenticate
             [FromServices] IAuthenticateService service) => await handler(service));
     }
 
-    private static void MapPostEndpoint<T>(
+    public static void MapPostEndpoint<T>(
         WebApplication app,
         string route,
         Func<IAuthenticateService, T, Task<object>> handler,
@@ -95,7 +95,7 @@ public static class MapAuthenticate
         });
     }
 
-    private static void MapPostEndpoint(
+    public static void MapPostEndpoint(
         WebApplication app,
         string route,
         Func<IAuthenticateService, Task<object>> handler,
@@ -117,7 +117,7 @@ public static class MapAuthenticate
         });
     }
 
-    private static void MapAuthorizedEndpoint<T>(
+    public static void MapAuthorizedEndpoint<T>(
         WebApplication app,
         string route,
         Func<IAuthenticateService, T, string, Task<object>> handler) where T : class
@@ -138,7 +138,7 @@ public static class MapAuthenticate
         });
     }
 
-    private static async Task<IResult?> ValidateAsync<T>(T request, IValidator<T> validator)
+    public static async Task<IResult?> ValidateAsync<T>(T request, IValidator<T> validator)
     {
         var result = await validator.ValidateAsync(request);
         return !result.IsValid ? Results.ValidationProblem(result.ToDictionary()) : null;
