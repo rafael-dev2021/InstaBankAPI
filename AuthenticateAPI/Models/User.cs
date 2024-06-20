@@ -8,6 +8,8 @@ public class User : IdentityUser
     public string? LastName { get; private set; }
     public string Cpf { get; private set; } = string.Empty;
     public string? Role { get; private set; }
+    
+    public ICollection<Token> Tokens { get; set; } = [];
     public void SetName(string? name) => Name = name;
     public void SetLastName(string? lastName) => LastName = lastName;
     public void SetEmail(string? email) => Email = email;
