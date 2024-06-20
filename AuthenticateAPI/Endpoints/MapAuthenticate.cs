@@ -1,4 +1,5 @@
 using AuthenticateAPI.Dto.Request;
+using AuthenticateAPI.Dto.Response;
 using AuthenticateAPI.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
@@ -27,7 +28,7 @@ public static class MapAuthenticate
             },
             StatusCodes.Status201Created
         );
-        
+
         MapPostEndpoint<ForgotPasswordDtoRequest>(
             app,
             "/v1/auth/forgot-password",
@@ -59,19 +60,24 @@ public static class MapAuthenticate
             async (service, request, _) => await service.ChangePasswordAsync(request)
         );
 
-        MapGetEndpoint(
+        MapGetEndpoint<IEnumerable<UserDtoResponse>>(
             app,
             "/v1/auth/users",
-            async service => await service.GetAllUsersDtoAsync());
+            async service => await service.GetAllUsersDtoAsync()
+        );
     }
-
-    public static void MapGetEndpoint(
+   
+    public static void MapGetEndpoint<T>(
         WebApplication app,
         string route,
-        Func<IAuthenticateService, Task<object>> handler)
+        Func<IAuthenticateService, Task<T>> handler)
     {
-        app.MapGet(route, [Authorize("Admin")] async (
-            [FromServices] IAuthenticateService service) => await handler(service));
+        app.MapGet(route, [Authorize(Roles = "Admin")] async (
+            [FromServices] IAuthenticateService service) =>
+        {
+            var result = await handler(service);
+            return Results.Ok(result);
+        });
     }
 
     public static void MapPostEndpoint<T>(
@@ -80,7 +86,7 @@ public static class MapAuthenticate
         Func<IAuthenticateService, T, Task<object>> handler,
         int expectedStatusCode = StatusCodes.Status200OK) where T : class
     {
-        app.MapPost(route, async (
+        app.MapPost(route, [Authorize(Roles = "Admin, User")] async (
             [FromServices] IAuthenticateService service,
             [FromBody] T request,
             IValidator<T> validator) =>
@@ -101,7 +107,7 @@ public static class MapAuthenticate
         Func<IAuthenticateService, Task<object>> handler,
         int expectedStatusCode = StatusCodes.Status204NoContent)
     {
-        app.MapPost(route, async (
+        app.MapPost(route, [Authorize(Roles = "Admin, User")] async (
             [FromServices] IAuthenticateService service) =>
         {
             try
@@ -122,7 +128,7 @@ public static class MapAuthenticate
         string route,
         Func<IAuthenticateService, T, string, Task<object>> handler) where T : class
     {
-        app.MapPut(route, [Authorize] async (
+        app.MapPut(route, [Authorize(Roles = "Admin, User")] async (
             [FromServices] IAuthenticateService service,
             [FromBody] T request,
             [FromQuery] string userId,
