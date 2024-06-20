@@ -17,6 +17,7 @@ namespace XUnitTests.AuthenticateAPI.Services
         private readonly AuthenticateService _authenticateService;
         private readonly Mock<ILogger<AuthenticateService>> _loggerMock;
         private readonly Mock<IMapper> _mapperMock;
+        private readonly Mock<ITokenManagerService> _tokenManagerServiceMock;
 
 
         protected AuthenticateServiceTests()
@@ -25,11 +26,13 @@ namespace XUnitTests.AuthenticateAPI.Services
             _tokenServiceMock = new Mock<ITokenService>();
             _loggerMock = new Mock<ILogger<AuthenticateService>>();
             _mapperMock = new Mock<IMapper>();
+            _tokenManagerServiceMock = new Mock<ITokenManagerService>();
             _authenticateService = new AuthenticateService(
                 _repositoryMock.Object,
                 _tokenServiceMock.Object,
                 _loggerMock.Object,
-                _mapperMock.Object
+                _mapperMock.Object,
+                _tokenManagerServiceMock.Object
             );
         }
 
@@ -122,25 +125,22 @@ namespace XUnitTests.AuthenticateAPI.Services
                 user.SetName("Test");
                 user.SetLastName("Test");
                 user.SetCpf("131.515.555-12");
-                const string expectedAccessToken = "accessToken";
-                const string expectedRefreshToken = "refreshToken";
+                var tokenResponse = new TokenDtoResponse("accessToken", "refreshToken");
 
                 _repositoryMock.Setup(r => r.AuthenticateAsync(It.IsAny<LoginDtoRequest>()))
                     .ReturnsAsync(authResponse);
                 _repositoryMock.Setup(r => r.GetUserProfileAsync(It.IsAny<string>()))
                     .ReturnsAsync(user);
-                _tokenServiceMock.Setup(ts => ts.GenerateAccessToken(It.IsAny<User>()))
-                    .Returns(expectedAccessToken);
-                _tokenServiceMock.Setup(ts => ts.GenerateRefreshToken(It.IsAny<User>()))
-                    .Returns(expectedRefreshToken);
+                _tokenManagerServiceMock.Setup(tms => tms.GenerateTokenResponseAsync(It.IsAny<User>()))
+                    .ReturnsAsync(tokenResponse);
 
                 // Act
                 var result = await _authenticateService.LoginAsync(loginRequest);
 
                 // Assert
                 Assert.NotNull(result);
-                Assert.Equal(expectedAccessToken, result.Token);
-                Assert.Equal(expectedRefreshToken, result.RefreshToken);
+                Assert.Equal(tokenResponse.Token, result.Token);
+                Assert.Equal(tokenResponse.RefreshToken, result.RefreshToken);
 
                 // Verify logging
                 _loggerMock.Verify(
@@ -433,7 +433,7 @@ namespace XUnitTests.AuthenticateAPI.Services
                     Times.Once);
             }
         }
-        
+
         public class LogoutAsyncTests : AuthenticateServiceTests
         {
             [Fact]
@@ -459,7 +459,7 @@ namespace XUnitTests.AuthenticateAPI.Services
                         null,
                         ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
                     Times.Once);
-            } 
+            }
         }
 
         public class ForgotPasswordAsyncTests : AuthenticateServiceTests
