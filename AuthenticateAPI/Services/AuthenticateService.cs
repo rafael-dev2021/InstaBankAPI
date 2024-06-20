@@ -10,7 +10,8 @@ public class AuthenticateService(
     IAuthenticatedRepository repository,
     ITokenService tokenService,
     ILogger<AuthenticateService> logger,
-    IMapper mapper) : IAuthenticateService
+    IMapper mapper,
+    ITokenManagerService tokenManagerService) : IAuthenticateService
 {
     
     public async Task<IEnumerable<UserDtoResponse>> GetAllUsersDtoAsync()
@@ -34,11 +35,13 @@ public class AuthenticateService(
         }
 
         var user = await repository.GetUserProfileAsync(request.Email!);
-        var token = tokenService.GenerateAccessToken(user!);
-        var refreshToken = tokenService.GenerateRefreshToken(user!);
+        
+        tokenManagerService.RevokeAllUserTokens(user!);
+        
+        var tokenResponse = await tokenManagerService.GenerateTokenResponseAsync(user!);
 
         logger.LogInformation("Login successful for email: {Email}", request.Email);
-        return new TokenDtoResponse(token, refreshToken);
+        return tokenResponse;
     }
 
     public async Task<TokenDtoResponse> RegisterAsync(RegisterDtoRequest request)
