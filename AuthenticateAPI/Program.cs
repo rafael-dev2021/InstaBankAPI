@@ -4,9 +4,10 @@ using AuthenticateAPI.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddInfrastructureModule();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApiExtensions();
+builder.Services.AddInfrastructureModule();
 
 var app = builder.Build();
 
@@ -22,6 +23,9 @@ app.UseMiddleware<LoggingMiddleware>();
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
+app.UseCors("CorsPolicy");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
