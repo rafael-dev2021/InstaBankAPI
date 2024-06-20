@@ -66,7 +66,7 @@ public static class MapAuthenticate
             async service => await service.GetAllUsersDtoAsync()
         );
     }
-   
+
     public static void MapGetEndpoint<T>(
         WebApplication app,
         string route,
@@ -86,10 +86,10 @@ public static class MapAuthenticate
         Func<IAuthenticateService, T, Task<object>> handler,
         int expectedStatusCode = StatusCodes.Status200OK) where T : class
     {
-        app.MapPost(route, [Authorize(Roles = "Admin, User")] async (
+        app.MapPost(route, async (
             [FromServices] IAuthenticateService service,
             [FromBody] T request,
-            IValidator<T> validator) =>
+            [FromServices] IValidator<T> validator) =>
         {
             var validationResult = await ValidateAsync(request, validator);
             if (validationResult != null)
@@ -132,7 +132,7 @@ public static class MapAuthenticate
             [FromServices] IAuthenticateService service,
             [FromBody] T request,
             [FromQuery] string userId,
-            IValidator<T> validator) =>
+            [FromServices] IValidator<T> validator) =>
         {
             var validationResult = await ValidateAsync(request, validator);
             if (validationResult != null)
@@ -190,3 +190,4 @@ public static class MapAuthenticate
         }
     }
 }
+
