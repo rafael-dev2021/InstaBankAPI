@@ -15,5 +15,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.PhoneNumber).HasMaxLength(14).IsRequired();
         builder.Property(x => x.Cpf).HasMaxLength(14).IsRequired();
         builder.Property(x => x.Role).HasMaxLength(15).IsRequired();
+        
+        builder.HasMany(u => u.Tokens)
+            .WithOne(t => t.User)
+            .HasForeignKey(t => t.UserId);
     }
 }
