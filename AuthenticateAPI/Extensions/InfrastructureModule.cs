@@ -10,5 +10,6 @@ public static class InfrastructureModule
         service.AddDependencyInjectionJwt();
         service.AddMappingProfileDependencyInjection();
         service.AddIdentityRulesDependencyInjection();
+        service.AddDependencyInjectionService();
     }
 }

@@ -57,9 +57,9 @@ public static class IdentityRulesDependencyInjection
             options.Cookie.SameSite = SameSiteMode.Strict;
             options.Cookie.IsEssential = true;
 
-            options.LoginPath = "/Account/Login";
-            options.LogoutPath = "/Account/Logout";
-            options.AccessDeniedPath = "/Account/AccessDenied";
+            options.LoginPath = "/v1/auth/Login";
+            options.LogoutPath = "/v1/auth/Logout";
+            options.AccessDeniedPath = "/v1/auth/AccessDenied";
             options.SlidingExpiration = true;
             options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
         });

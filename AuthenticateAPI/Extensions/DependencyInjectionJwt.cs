@@ -1,6 +1,5 @@
 using System.Text;
 using AuthenticateAPI.Security;
-using AuthenticateAPI.Services;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -41,19 +40,14 @@ public static class DependencyInjectionJwt
             };
         });
 
-        service.AddTransient<ITokenService, TokenService>();
-        service.AddTransient<IAuthenticateService, AuthenticateService>();
-
         var jwtSettings = new JwtSettings
         {
             SecretKey = secretKey,
             Issuer = issuer,
             Audience = audience,
-            ExpirationTokenMinutes = int.Parse(expirationTokenMinutes!), 
-            RefreshTokenExpirationMinutes = int.Parse(expirationRefreshTokenMinutes!) 
+            ExpirationTokenMinutes = int.Parse(expirationTokenMinutes!),
+            RefreshTokenExpirationMinutes = int.Parse(expirationRefreshTokenMinutes!)
         };
         service.AddSingleton(jwtSettings);
-
-        service.AddAuthorization();
     }
 }
