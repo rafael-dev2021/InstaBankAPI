@@ -1,12 +1,13 @@
 ﻿using System.Security.Claims;
 using AuthenticateAPI.Models;
 using AuthenticateAPI.Repositories.Interfaces;
+using AuthenticateAPI.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 
-namespace AuthenticateAPI.Security;
+namespace AuthenticateAPI.Middleware;
 
-public class SecurityFilter(RequestDelegate next, ILogger<SecurityFilter> logger)
+public class SecurityFilterMiddleware(RequestDelegate next, ILogger<SecurityFilterMiddleware> logger)
 {
     public async Task InvokeAsync(HttpContext context, IServiceProvider serviceProvider)
     {
@@ -17,12 +18,18 @@ public class SecurityFilter(RequestDelegate next, ILogger<SecurityFilter> logger
             var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
 
             var token = RecoverTokenFromRequest(context.Request);
-            if (token != null && await HandleAuthentication(context, token, tokenService, tokenRepository, userManager))
+            var isAuthenticated = false;
+
+            if (token != null)
             {
-                return;
+                isAuthenticated =
+                    await HandleAuthentication(context, token, tokenService, tokenRepository, userManager);
             }
 
-            await next(context);
+            if (!isAuthenticated)
+            {
+                await next(context);
+            }
         }
         catch (Exception e)
         {
@@ -56,7 +63,8 @@ public class SecurityFilter(RequestDelegate next, ILogger<SecurityFilter> logger
             if (user != null && isTokenValid)
             {
                 SetAuthenticationInSecurityContext(context, user);
-                logger.LogInformation("[USER_AUTHENTICATED] User: {UserName} successfully authenticated with token: {Token}.",
+                logger.LogInformation(
+                    "[USER_AUTHENTICATED] User: {UserName} successfully authenticated with token: {Token}.",
                     user.UserName, token);
                 return true;
             }

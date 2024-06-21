@@ -44,7 +44,18 @@ public class TokenRepository(AppDbContext context) : ITokenRepository
 
     public async Task SaveAllTokensAsync(IEnumerable<Token> tokens)
     {
-        context.Tokens.UpdateRange(tokens);
+        foreach (var token in tokens)
+        {
+            var existingToken = await context.Tokens.FindAsync(token.Id);
+            if (existingToken == null)
+            {
+                context.Tokens.Add(token);
+            }
+            else
+            {
+                context.Entry(existingToken).CurrentValues.SetValues(token);
+            }
+        }
         await context.SaveChangesAsync();
     }
 

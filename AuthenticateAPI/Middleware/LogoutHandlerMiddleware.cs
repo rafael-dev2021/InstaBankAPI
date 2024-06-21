@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace AuthenticateAPI.Middleware;
 
-public class CustomLogoutHandler(RequestDelegate next, ILogger<CustomLogoutHandler> logger)
+public class LogoutHandlerMiddleware(RequestDelegate next, ILogger<LogoutHandlerMiddleware> logger)
 {
     public async Task InvokeAsync(HttpContext context, IServiceProvider serviceProvider)
     {

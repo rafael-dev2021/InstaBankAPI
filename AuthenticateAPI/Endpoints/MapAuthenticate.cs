@@ -2,7 +2,6 @@ using AuthenticateAPI.Dto.Request;
 using AuthenticateAPI.Dto.Response;
 using AuthenticateAPI.Services;
 using FluentValidation;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthenticateAPI.Endpoints;
@@ -14,7 +13,8 @@ public static class MapAuthenticate
         MapPostEndpoint<LoginDtoRequest>(
             app,
             "/v1/auth/login",
-            async (service, request) => await service.LoginAsync(request)
+            async (service, request) => await service.LoginAsync(request),
+            requireAuthentication: false
         );
 
         MapPostEndpoint<RegisterDtoRequest>(
@@ -26,7 +26,8 @@ public static class MapAuthenticate
                 var location = $"/v1/users/{request.Email}";
                 return Results.Created(location, response);
             },
-            StatusCodes.Status201Created
+            StatusCodes.Status201Created,
+            requireAuthentication: false
         );
 
         MapPostEndpoint<ForgotPasswordDtoRequest>(
@@ -36,7 +37,8 @@ public static class MapAuthenticate
             {
                 var success = await service.ForgotPasswordAsync(request.Email!, request.NewPassword!);
                 return Results.Ok(success);
-            }
+            },
+            requireAuthentication: false
         );
 
         MapPostEndpoint(
@@ -45,36 +47,57 @@ public static class MapAuthenticate
             async service =>
             {
                 await service.LogoutAsync();
-                return Results.NoContent();
-            });
+                return null!;
+            },
+            expectedStatusCode: StatusCodes.Status204NoContent,
+            requireAuthentication: true
+        );
 
         MapAuthorizedEndpoint<UpdateUserDtoRequest>(
             app,
             "/v1/auth/update-profile",
-            async (service, request, userId) => await service.UpdateAsync(request, userId)
+            async (service, request, userId) => await service.UpdateAsync(request, userId),
+            requireAuthentication: true
         );
 
         MapAuthorizedEndpoint<ChangePasswordDtoRequest>(
             app,
             "/v1/auth/change-password",
-            async (service, request, _) => await service.ChangePasswordAsync(request)
+            async (service, request, _) => await service.ChangePasswordAsync(request),
+            requireAuthentication: true
         );
 
         MapGetEndpoint<IEnumerable<UserDtoResponse>>(
             app,
             "/v1/auth/users",
-            async service => await service.GetAllUsersDtoAsync()
+            async service => await service.GetAllUsersDtoAsync(),
+            requireAuthentication: true
         );
     }
 
     public static void MapGetEndpoint<T>(
         WebApplication app,
         string route,
-        Func<IAuthenticateService, Task<T>> handler)
+        Func<IAuthenticateService, Task<T>> handler,
+        bool requireAuthentication = true)
     {
-        app.MapGet(route, [Authorize(Roles = "Admin")] async (
-            [FromServices] IAuthenticateService service) =>
+        app.MapGet(route, async (
+            [FromServices] IAuthenticateService service,
+            HttpContext context) =>
         {
+            if (requireAuthentication)
+            {
+                if (!context.User.Identity!.IsAuthenticated)
+                {
+                    return Results.StatusCode(StatusCodes.Status401Unauthorized);
+                }
+
+                if (!context.User.IsInRole("Admin"))
+                {
+                    return Results.StatusCode(StatusCodes.Status403Forbidden);
+                }
+            }
+
             var result = await handler(service);
             return Results.Ok(result);
         });
@@ -84,13 +107,20 @@ public static class MapAuthenticate
         WebApplication app,
         string route,
         Func<IAuthenticateService, T, Task<object>> handler,
-        int expectedStatusCode = StatusCodes.Status200OK) where T : class
+        int expectedStatusCode = StatusCodes.Status200OK,
+        bool requireAuthentication = true) where T : class
     {
         app.MapPost(route, async (
             [FromServices] IAuthenticateService service,
             [FromBody] T request,
-            [FromServices] IValidator<T> validator) =>
+            [FromServices] IValidator<T> validator,
+            HttpContext context) =>
         {
+            if (requireAuthentication && !context.User.Identity!.IsAuthenticated)
+            {
+                return Results.StatusCode(StatusCodes.Status401Unauthorized);
+            }
+
             var validationResult = await ValidateAsync(request, validator);
             if (validationResult != null)
             {
@@ -105,11 +135,18 @@ public static class MapAuthenticate
         WebApplication app,
         string route,
         Func<IAuthenticateService, Task<object>> handler,
-        int expectedStatusCode = StatusCodes.Status204NoContent)
+        int expectedStatusCode = StatusCodes.Status204NoContent,
+        bool requireAuthentication = true)
     {
-        app.MapPost(route, [Authorize(Roles = "Admin, User")] async (
-            [FromServices] IAuthenticateService service) =>
+        app.MapPost(route, async (
+            [FromServices] IAuthenticateService service,
+            HttpContext context) =>
         {
+            if (requireAuthentication && !context.User.Identity!.IsAuthenticated)
+            {
+                return Results.StatusCode(StatusCodes.Status401Unauthorized);
+            }
+
             try
             {
                 await handler(service);
@@ -126,14 +163,21 @@ public static class MapAuthenticate
     public static void MapAuthorizedEndpoint<T>(
         WebApplication app,
         string route,
-        Func<IAuthenticateService, T, string, Task<object>> handler) where T : class
+        Func<IAuthenticateService, T, string, Task<object>> handler,
+        bool requireAuthentication = true) where T : class
     {
-        app.MapPut(route, [Authorize(Roles = "Admin, User")] async (
+        app.MapPut(route, async (
             [FromServices] IAuthenticateService service,
             [FromBody] T request,
             [FromQuery] string userId,
-            [FromServices] IValidator<T> validator) =>
+            [FromServices] IValidator<T> validator,
+            HttpContext context) =>
         {
+            if (requireAuthentication && !context.User.Identity!.IsAuthenticated)
+            {
+                return Results.StatusCode(StatusCodes.Status401Unauthorized);
+            }
+
             var validationResult = await ValidateAsync(request, validator);
             if (validationResult != null)
             {
@@ -190,4 +234,3 @@ public static class MapAuthenticate
         }
     }
 }
-

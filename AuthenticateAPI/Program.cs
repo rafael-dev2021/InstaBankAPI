@@ -28,8 +28,8 @@ app.UseCors("CorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseMiddleware<CustomLogoutHandler>();
-app.UseMiddleware<SecurityFilter>();
+app.UseMiddleware<LogoutHandlerMiddleware>();
+app.UseMiddleware<SecurityFilterMiddleware>();
 app.UseMiddleware<LoggingMiddleware>();
 
 app.MapAuthenticateEndpoints();

@@ -45,7 +45,7 @@ public class TokenManagerService(
         logger.LogInformation("All tokens revoked for user {UserId}", user.Id);
     }
 
-    private async Task ClearTokensAsync(string userId)
+    public async Task ClearTokensAsync(string userId)
     {
         var tokens = await tokenRepository.FindAllTokensByUserId(userId);
         if (tokens.Count == 0) return;
@@ -53,17 +53,15 @@ public class TokenManagerService(
         logger.LogInformation("Cleared tokens for user {UserId}", userId);
     }
 
-    private async Task<Token> SaveUserTokenAsync(User user, string jwtToken)
+    public async Task<Token> SaveUserTokenAsync(User user, string jwtToken)
     {
-        var token = new Token
-        {
-            UserId = user.Id,
-            User = user,
-        };
+        var token = new Token();
         token.SetTokenValue(jwtToken);
         token.SetTokenType(TokenType.Bearer);
         token.SetTokenExpired(false);
         token.SetTokenRevoked(false);
+        token.SetUserId(user.Id);
+        token.SetUser(user);
 
         var savedToken = await tokenRepository.SaveTokenAsync(token);
         logger.LogInformation("Token saved successfully for user {UserId}", user.Id);

@@ -12,11 +12,16 @@ public class TokenConfiguration : IEntityTypeConfiguration<Token>
         builder.Property(t => t.TokenValue);
         builder.Property(t => t.TokenRevoked);
         builder.Property(t => t.TokenExpired);
-        builder.Property(t => t.TokenType);
         
         builder.HasOne(t => t.User)
             .WithMany(u => u.Tokens)
             .HasForeignKey(t => t.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.Property(t => t.TokenType)
+            .HasConversion(
+                v => v.ToString(),
+                v => (TokenType)Enum.Parse(typeof(TokenType), v))
+            .IsRequired();
     }
 }
