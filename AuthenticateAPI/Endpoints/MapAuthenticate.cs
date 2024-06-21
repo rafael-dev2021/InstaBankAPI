@@ -5,7 +5,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthenticateAPI.Endpoints;
-
+ 
 public static class MapAuthenticate
 {
     public static void MapAuthenticateEndpoints(this WebApplication app)
