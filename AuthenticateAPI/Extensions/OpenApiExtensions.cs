@@ -17,9 +17,12 @@ public static class OpenApiExtensions
         services.AddCors(options =>
         {
             options.AddPolicy("CorsPolicy",
-                builder => builder.AllowAnyOrigin()
-                    .AllowAnyMethod()
-                    .AllowAnyHeader());
+                builder =>
+                {
+                    builder.WithOrigins("https://localhost:7074", "http://localhost:5082")
+                        .WithMethods("GET", "POST", "PUT", "DELETE")
+                        .WithHeaders("Authorization", "Content-Type");
+                });
         });
 
         services.AddSwaggerGen(c =>
