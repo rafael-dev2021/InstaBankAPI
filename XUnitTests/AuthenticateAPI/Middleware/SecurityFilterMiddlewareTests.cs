@@ -97,7 +97,7 @@ public class SecurityFilterMiddlewareTests
         }
 
         [Fact]
-        public async Task Should_Log_Error_And_Rethrow_Exception_On_Invocation_Failure()
+        public async Task Should_Log_Error_On_Invocation_Failure()
         {
             // Arrange
             const string exceptionMessage = "Test exception";
@@ -111,10 +111,18 @@ public class SecurityFilterMiddlewareTests
 
             _mockHttpContext.Setup(c => c.RequestServices).Returns(mockServiceProvider.Object);
 
-            // Act & Assert
-            var thrownException = await Assert.ThrowsAsync<Exception>(() =>
-                filter.InvokeAsync(_mockHttpContext.Object, mockServiceProvider.Object));
-            Assert.Equal(exceptionMessage, thrownException.Message);
+            // Act
+            await filter.InvokeAsync(_mockHttpContext.Object, mockServiceProvider.Object);
+
+            // Assert
+            _mockLogger.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(exceptionMessage)),
+                    exception,
+                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
+                Times.Once);
         }
         
         [Fact]
