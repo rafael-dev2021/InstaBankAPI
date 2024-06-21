@@ -1,4 +1,5 @@
-﻿using Microsoft.OpenApi.Models;
+﻿using DotNetEnv;
+using Microsoft.OpenApi.Models;
 
 namespace AuthenticateAPI.Extensions;
 
@@ -6,6 +7,9 @@ public static class OpenApiExtensions
 {
     public static void AddOpenApiExtensions(this IServiceCollection services)
     {
+        Env.Load();
+        var openApiUrl = Environment.GetEnvironmentVariable("OPENAPI_URL");
+        
         services.AddAuthorizationBuilder()
             .AddPolicy("Admin", policy => { policy.RequireRole("Admin"); });
 
@@ -24,12 +28,12 @@ public static class OpenApiExtensions
                 Version = "v1",
                 Title = "AuthenticateAPI",
                 Description = "An ASP.NET Core Web API for managing AuthenticateAPI",
-                TermsOfService = new Uri("https://github.com/rafael-dev2021"),
+                TermsOfService = new Uri(openApiUrl!),
                 Contact = new OpenApiContact
                 {
                     Name = "Rafael Dev",
                     Email = "Rafael98kk@gmail.com",
-                    Url = new Uri("https://github.com/rafael-dev2021")
+                    Url = new Uri(openApiUrl!)
                 }
             });
 
