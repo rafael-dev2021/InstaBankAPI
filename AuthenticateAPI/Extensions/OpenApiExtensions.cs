@@ -9,7 +9,8 @@ public static class OpenApiExtensions
     {
         Env.Load();
         var openApiUrl = Environment.GetEnvironmentVariable("OPENAPI_URL");
-        
+        const string bearer = "Bearer";
+
         services.AddAuthorizationBuilder()
             .AddPolicy("Admin", policy => { policy.RequireRole("Admin"); });
 
@@ -37,13 +38,13 @@ public static class OpenApiExtensions
                 }
             });
 
-            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            c.AddSecurityDefinition(bearer, new OpenApiSecurityScheme
             {
-                Description = @"'Bearer' [space] your token",
+                Description = $"'{bearer}' [space] your token",
                 Name = "Authorization",
                 In = ParameterLocation.Header,
                 Type = SecuritySchemeType.ApiKey,
-                Scheme = "Bearer"
+                Scheme = bearer
             });
 
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -54,10 +55,10 @@ public static class OpenApiExtensions
                         Reference = new OpenApiReference
                         {
                             Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
+                            Id = bearer
                         },
                         Scheme = "oauth2",
-                        Name = "Bearer",
+                        Name = bearer,
                         In = ParameterLocation.Header
                     },
                     new List<string>()
