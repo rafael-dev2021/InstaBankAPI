@@ -5,7 +5,7 @@ using AuthenticateAPI.Models;
 using Microsoft.IdentityModel.Tokens;
 
 namespace AuthenticateAPI.Security;
-
+ 
 public class TokenService(JwtSettings jwtSettings, ILogger<TokenService> logger) : ITokenService
 {
     public string GenerateToken(User user, int expirationToken)
