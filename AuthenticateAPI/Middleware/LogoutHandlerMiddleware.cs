@@ -3,7 +3,7 @@ using AuthenticateAPI.Repositories.Interfaces;
 using Microsoft.AspNetCore.Identity;
 
 namespace AuthenticateAPI.Middleware;
-
+ 
 public class LogoutHandlerMiddleware(RequestDelegate next, ILogger<LogoutHandlerMiddleware> logger)
 {
     public async Task InvokeAsync(HttpContext context, IServiceProvider serviceProvider)

@@ -34,7 +34,6 @@ public class SecurityFilterMiddleware(RequestDelegate next, ILogger<SecurityFilt
         catch (Exception e)
         {
             logger.LogError(e, "[ERROR_FILTER] Error processing security filter: {Message}", e.Message);
-            throw;
         }
     }
 
