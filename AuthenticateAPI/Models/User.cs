@@ -15,5 +15,5 @@ public class User : IdentityUser
     public void SetPhoneNumber(string phoneNumber) => PhoneNumber = phoneNumber;
     public void SetCpf(string cpf) => Cpf = cpf;
     public void SetRole(string? role) => Role = role;
-    public void AddToken(Token token) => Tokens.Add(token);
+    public void AddToken(Token token) => Tokens.Add(token); 
 }
