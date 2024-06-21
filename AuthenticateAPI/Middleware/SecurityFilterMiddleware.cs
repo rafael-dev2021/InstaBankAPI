@@ -17,9 +17,9 @@ public class SecurityFilter(RequestDelegate next, ILogger<SecurityFilter> logger
             var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
 
             var token = RecoverTokenFromRequest(context.Request);
-            if (token != null)
+            if (token != null && await HandleAuthentication(context, token, tokenService, tokenRepository, userManager))
             {
-                await HandleAuthentication(context, token, tokenService, tokenRepository, userManager);
+                return;
             }
 
             await next(context);
@@ -31,7 +31,7 @@ public class SecurityFilter(RequestDelegate next, ILogger<SecurityFilter> logger
         }
     }
 
-    private string? RecoverTokenFromRequest(HttpRequest request)
+    public string? RecoverTokenFromRequest(HttpRequest request)
     {
         if (request.Headers.TryGetValue("Authorization", out var authHeader))
         {
@@ -44,30 +44,32 @@ public class SecurityFilter(RequestDelegate next, ILogger<SecurityFilter> logger
         return null;
     }
 
-    private async Task HandleAuthentication(HttpContext context, string token, ITokenService tokenService, ITokenRepository tokenRepository, UserManager<User> userManager)
+    public async Task<bool> HandleAuthentication(HttpContext context, string token, ITokenService tokenService,
+        ITokenRepository tokenRepository, UserManager<User> userManager)
     {
         try
         {
             var email = tokenService.ValidateToken(token)?.Identity?.Name;
-            if (email != null)
-            {
-                var user = await userManager.FindByEmailAsync(email);
-                var isTokenValid = await IsTokenValid(tokenRepository, token);
+            var user = await userManager.FindByEmailAsync(email!);
+            var isTokenValid = await IsTokenValid(tokenRepository, token);
 
-                if (user != null && isTokenValid)
-                {
-                    SetAuthenticationInSecurityContext(context, user);
-                }
-                else
-                {
-                    LogError(context, token);
-                }
+            if (user != null && isTokenValid)
+            {
+                SetAuthenticationInSecurityContext(context, user);
+                logger.LogInformation("[USER_AUTHENTICATED] User: {UserName} successfully authenticated with token: {Token}.",
+                    user.UserName, token);
+                return true;
             }
+
+            LogError(context, token);
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return false;
         }
         catch (SecurityTokenException e)
         {
             await HandleInvalidToken(context.Response, e);
             LogError(context, token);
+            return false;
         }
     }
 
@@ -106,7 +108,7 @@ public class SecurityFilter(RequestDelegate next, ILogger<SecurityFilter> logger
         context.User = claimsPrincipal;
     }
 
-    private async Task HandleInvalidToken(HttpResponse response, SecurityTokenException e)
+    public async Task HandleInvalidToken(HttpResponse response, SecurityTokenException e)
     {
         response.StatusCode = StatusCodes.Status401Unauthorized;
         await response.WriteAsync(e.Message);

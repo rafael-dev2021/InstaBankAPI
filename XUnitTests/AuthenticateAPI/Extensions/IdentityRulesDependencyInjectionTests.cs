@@ -108,9 +108,9 @@ public class IdentityRulesDependencyInjectionTests
         Assert.Equal(CookieSecurePolicy.Always, options.Cookie.SecurePolicy);
         Assert.Equal(SameSiteMode.Strict, options.Cookie.SameSite);
         Assert.True(options.Cookie.IsEssential);
-        Assert.Equal("/Account/Login", options.LoginPath);
-        Assert.Equal("/Account/Logout", options.LogoutPath);
-        Assert.Equal("/Account/AccessDenied", options.AccessDeniedPath);
+        Assert.Equal("/v1/auth/Login", options.LoginPath);
+        Assert.Equal("/v1/auth/Logout", options.LogoutPath);
+        Assert.Equal("/v1/auth/AccessDenied", options.AccessDeniedPath);
         Assert.True(options.SlidingExpiration);
         Assert.Equal(TimeSpan.FromMinutes(30), options.ExpireTimeSpan);
     }

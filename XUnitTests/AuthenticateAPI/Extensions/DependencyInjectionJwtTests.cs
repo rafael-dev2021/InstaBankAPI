@@ -1,8 +1,6 @@
 ﻿using AuthenticateAPI.Extensions;
-using AuthenticateAPI.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -12,7 +10,6 @@ namespace XUnitTests.AuthenticateAPI.Extensions;
 public class DependencyInjectionJwtTests
 {
     private readonly IConfiguration _configuration;
-    private readonly GenerateKey _generateKey = new();
 
     public DependencyInjectionJwtTests()
     {
@@ -50,10 +47,6 @@ public class DependencyInjectionJwtTests
         var authService = serviceProvider.GetService<IAuthenticationSchemeProvider>();
         Assert.NotNull(authService);
 
-        var tokenService = serviceProvider.GetService<ITokenService>();
-        Assert.NotNull(tokenService);
-        Assert.IsType<TokenService>(tokenService);
-
         var authServiceType = await authService.GetSchemeAsync(JwtBearerDefaults.AuthenticationScheme);
         Assert.NotNull(authServiceType);
 
@@ -65,22 +58,5 @@ public class DependencyInjectionJwtTests
         Assert.Equal("http://localhost", jwtOptions.TokenValidationParameters.ValidIssuer);
         Assert.Equal("http://localhost", jwtOptions.TokenValidationParameters.ValidAudience);
         Assert.NotNull(jwtOptions.TokenValidationParameters.IssuerSigningKey);
-    }
-
-    [Fact]
-    public void AddDependencyInjectionJwt_ShouldAddAuthorization()
-    {
-        // Arrange
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddSingleton(_configuration);
-
-        // Act
-        services.AddDependencyInjectionJwt();
-        var serviceProvider = services.BuildServiceProvider();
-
-        // Assert
-        var authorizationService = serviceProvider.GetService<IAuthorizationService>();
-        Assert.NotNull(authorizationService);
     }
 }

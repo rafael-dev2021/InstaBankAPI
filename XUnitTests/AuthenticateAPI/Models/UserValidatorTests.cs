@@ -213,4 +213,38 @@ public class UserValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Cpf)
             .WithErrorMessage("Invalid CPF format.");
     }
+    
+    [Fact]
+    public void Should_Not_Have_Error_When_Tokens_Collection_Is_Not_Null()
+    {
+        // Arrange
+        var user = new User();
+        user.Tokens.Should().NotBeNull();
+
+        // Act
+        var result = _validator.TestValidate(user);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.Tokens);
+    }
+
+    [Fact]
+    public void Should_Have_Error_When_Tokens_Collection_Contains_Null_Element()
+    {
+        // Arrange
+        var user = new User();
+        user.SetName("John");
+        user.SetLastName("Doe");
+        user.SetEmail("john.doe@example.com");
+        user.SetPhoneNumber("+1234567890");
+        user.SetCpf("123.456.789-10");
+        user.AddToken(null!); 
+
+        // Act
+        var result = _validator.TestValidate(user);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Tokens)
+            .WithErrorMessage("Tokens collection cannot contain null elements.");
+    }
 }

@@ -2,7 +2,7 @@
 using AuthenticateAPI.Repositories.Interfaces;
 using Microsoft.AspNetCore.Identity;
 
-namespace AuthenticateAPI.Security;
+namespace AuthenticateAPI.Middleware;
 
 public class CustomLogoutHandler(RequestDelegate next, ILogger<CustomLogoutHandler> logger)
 {
