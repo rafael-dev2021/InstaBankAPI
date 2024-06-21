@@ -14,6 +14,6 @@ public class UserValidator : AbstractValidator<User>
         RuleFor(x => x.Cpf).CpfRules();
         RuleFor(x => x.Tokens)
             .Must(tokens => tokens != null && !tokens.Contains(null!))
-            .WithMessage("Tokens collection cannot contain null elements.");
+            .WithMessage("Tokens collection cannot contain null elements."); 
     }
 }
