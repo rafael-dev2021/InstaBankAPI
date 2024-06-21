@@ -9,7 +9,7 @@ public class Token
     public TokenType TokenType { get; private set; }
     public string? UserId { get; private set; }
     public User? User { get; private set; }
-
+ 
     public void SetId(int id) => Id = id;
     public void SetTokenValue(string? tokenValue) => TokenValue = tokenValue;
     public void SetTokenRevoked(bool tokenRevoked) => TokenRevoked = tokenRevoked;
