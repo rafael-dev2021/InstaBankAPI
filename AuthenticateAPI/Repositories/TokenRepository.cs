@@ -79,5 +79,4 @@ public class TokenRepository(AppDbContext context) : ITokenRepository
         await context.SaveChangesAsync();
         return token;
     }
-
 }
