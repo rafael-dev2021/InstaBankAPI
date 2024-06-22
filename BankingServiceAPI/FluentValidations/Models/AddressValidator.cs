@@ -7,6 +7,10 @@ public class AddressValidator : AbstractValidator<Address>
 {
     public AddressValidator()
     {
+        RuleFor(x => x.Id)
+            .GreaterThanOrEqualTo(0)
+            .WithMessage("Id must be greater than or equal to 0.");
+        
         RuleFor(x => x.Street)
             .NotEmpty()
             .WithMessage("Street is required.")

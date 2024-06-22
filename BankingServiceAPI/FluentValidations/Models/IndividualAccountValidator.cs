@@ -20,10 +20,5 @@ public class IndividualAccountValidator : AbstractValidator<IndividualAccount>
             .WithMessage("Date of birth is required.")
             .Must(date => date <= DateTime.Now.AddYears(-18))
             .WithMessage("Must be at least 18 years old.");
-
-        RuleFor(x => x.Address)
-            .NotNull()
-            .WithMessage("Address is required.")
-            .SetValidator(new AddressValidator()!);
     }
 }

@@ -20,10 +20,5 @@ public class CorporateAccountValidator : AbstractValidator<CorporateAccount>
             .WithMessage("Business name is required.")
             .MaximumLength(100)
             .WithMessage("Business name must not exceed 100 characters.");
-
-        RuleFor(x => x.BusinessAddress)
-            .NotNull()
-            .WithMessage("Business address is required.")
-            .SetValidator(new AddressValidator()!);
     }
 }

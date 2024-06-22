@@ -28,5 +28,10 @@ public class BaseEntityValidator : AbstractValidator<BaseEntity>
         RuleFor(x => x.Balance)
             .GreaterThanOrEqualTo(0)
             .WithMessage("Balance must be greater than or equal to zero.");
+        
+        RuleFor(x => x.Address)
+            .NotNull()
+            .WithMessage("Address is required.")
+            .SetValidator(new AddressValidator()!);
     }
 }
