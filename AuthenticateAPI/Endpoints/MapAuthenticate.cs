@@ -23,7 +23,7 @@ public static class MapAuthenticate
             async (service, request) =>
             {
                 var response = await service.RegisterAsync(request);
-                var location = $"/v1/users/{request.Email}";
+                var location = $"/v1/auth/users/{request.Email}";
                 return Results.Created(location, response);
             },
             StatusCodes.Status201Created,
@@ -72,6 +72,13 @@ public static class MapAuthenticate
             "/v1/auth/users",
             async service => await service.GetAllUsersDtoAsync(),
             requireAuthentication: true
+        );
+        
+        MapPostEndpoint<RefreshTokenDtoRequest>(
+            app,
+            "/v1/auth/refresh-token",
+            async (service, request) => await service.RefreshTokenAsync(request),
+            requireAuthentication: false
         );
     }
 
