@@ -39,6 +39,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AuthenticateAPI\AuthenticateAPI.csproj" />
+    <ProjectReference Include="..\BankingServiceAPI\BankingServiceAPI.csproj" />
   </ItemGroup>
 
 </Project>
