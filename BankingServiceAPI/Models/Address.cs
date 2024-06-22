@@ -2,6 +2,7 @@
 
 public class Address
 {
+    public int Id { get; private set; }
     public string? Street { get; private set; }
     public string? Number { get; private set; }
     public string? Complement { get; private set; }
@@ -10,6 +11,7 @@ public class Address
     public string? PostalCode { get; private set; }
     public string? Country { get; private set; }
 
+    public void SetId(int id) => Id = id;
     public void SetStreet(string? street) => Street = street;
     public void SetNumber(string? number) => Number = number;
     public void SetComplement(string? complement) => Complement = complement;
