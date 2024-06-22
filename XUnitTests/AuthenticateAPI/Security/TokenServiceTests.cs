@@ -1,6 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 using AuthenticateAPI.Models;
 using AuthenticateAPI.Security;
@@ -14,7 +13,6 @@ public class TokenServiceTests
 {
     private readonly JwtSettings _jwtSettings;
     private readonly Mock<ILogger<TokenService>> _loggerMock;
-    private readonly GenerateKey _generateKey = new();
 
     protected TokenServiceTests()
     {
@@ -44,6 +42,7 @@ public class TokenServiceTests
                 Email = "test@example.com",
             };
             user.SetName("Test User");
+            user.SetRole("user");
 
             // Act
             var token = tokenService.GenerateToken(user, 30);
@@ -85,6 +84,7 @@ public class TokenServiceTests
                 Email = "test@example.com",
             };
             user.SetName("Test User");
+            user.SetRole("user");
 
             // Act
             var token = tokenService.GenerateAccessToken(user);
@@ -126,6 +126,7 @@ public class TokenServiceTests
                 Email = "test@example.com",
             };
             user.SetName("Test User");
+            user.SetRole("user");
 
             // Act
             var token = tokenService.GenerateRefreshToken(user);
@@ -167,6 +168,7 @@ public class TokenServiceTests
                 Email = "test@example.com",
             };
             user.SetName("Test User");
+            user.SetRole("user");
 
             var token = tokenService.GenerateAccessToken(user);
 

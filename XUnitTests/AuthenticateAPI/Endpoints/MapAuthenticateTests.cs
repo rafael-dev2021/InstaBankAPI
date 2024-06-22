@@ -80,7 +80,7 @@ public class MapAuthenticateTests
     {
         // Arrange
         var request = new RegisterDtoRequest("John", "Doe", "1234567890", "123.456.789-10", "test@localhost.com",
-            "@Visual23k+", "@Visual23k+");
+            "Admin","@Visual23k+", "@Visual23k+");
         var validationResult = new ValidationResult();
         var response = new TokenDtoResponse("token", "refreshToken");
 
@@ -112,7 +112,7 @@ public class MapAuthenticateTests
     {
         // Arrange
         var request = new RegisterDtoRequest("John", "Doe", "1234567890", "123.456.789-10", "test@localhost.com",
-            "@Visual23k+", "@Visual23k+");
+            "Admin","@Visual23k+", "@Visual23k+");
         var validationResult = new ValidationResult();
         const string exceptionMessage = "Registration failed due to some error.";
 
@@ -300,7 +300,7 @@ public class MapAuthenticateTests
         var app = builder.Build();
         const string route = "/test-create-route";
         var request = new RegisterDtoRequest("John", "Doe", "1234567890", "123.456.789-10", "test@localhost.com",
-            "@Visual23k+", "@Visual23k+");
+            "Admin","@Visual23k+", "@Visual23k+");
         var validationResult = new ValidationResult();
         var response = new TokenDtoResponse("accessToken", "refreshToken");
 

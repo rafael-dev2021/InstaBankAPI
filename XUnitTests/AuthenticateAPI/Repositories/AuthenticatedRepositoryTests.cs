@@ -151,7 +151,7 @@ public class AuthenticatedRepositoryTests
         {
             // Arrange
             var request = new RegisterDtoRequest("John", "Doe", "+1234567890", "123.456.789-01", "john.doe@example.com",
-                "StrongP@ssw0rd", "StrongP@ssw0rd");
+                "Admin","StrongP@ssw0rd", "StrongP@ssw0rd");
 
             var expectedResponse = new RegisteredDtoResponse(true, "Registration successful.");
 
@@ -178,7 +178,7 @@ public class AuthenticatedRepositoryTests
         {
             // Arrange
             var request = new RegisterDtoRequest("John", "Doe", "+1234567890", "123.456.789-01", "john.doe@example.com",
-                "StrongP@ssw0rd", "StrongP@ssw0r");
+                "Admin", "StrongP@ssw0rd", "StrongP@ssw0r");
 
             var validationErrors = new List<string> { "Email already used." };
             var expectedResponse = new RegisteredDtoResponse(false, string.Join(Environment.NewLine, validationErrors));
