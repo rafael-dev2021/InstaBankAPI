@@ -24,8 +24,8 @@ public class AuthenticatedRepositoryTests
 
     protected AuthenticatedRepositoryTests()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: "TestDatabase")
+           var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
         _appDbContext = new AppDbContext(options);
@@ -151,7 +151,7 @@ public class AuthenticatedRepositoryTests
         {
             // Arrange
             var request = new RegisterDtoRequest("John", "Doe", "+1234567890", "123.456.789-01", "john.doe@example.com",
-                "StrongP@ssw0rd", "StrongP@ssw0rd");
+                "Admin","StrongP@ssw0rd", "StrongP@ssw0rd");
 
             var expectedResponse = new RegisteredDtoResponse(true, "Registration successful.");
 
@@ -178,7 +178,7 @@ public class AuthenticatedRepositoryTests
         {
             // Arrange
             var request = new RegisterDtoRequest("John", "Doe", "+1234567890", "123.456.789-01", "john.doe@example.com",
-                "StrongP@ssw0rd", "StrongP@ssw0r");
+                "Admin", "StrongP@ssw0rd", "StrongP@ssw0r");
 
             var validationErrors = new List<string> { "Email already used." };
             var expectedResponse = new RegisteredDtoResponse(false, string.Join(Environment.NewLine, validationErrors));
@@ -444,6 +444,43 @@ public class AuthenticatedRepositoryTests
 
             // Assert
             _signInManagerMock.Verify(sm => sm.SignOutAsync(), Times.Once);
+        }
+    }
+    
+    public class SaveAsyncTests : AuthenticatedRepositoryTests
+    {
+        [Fact(DisplayName = "SaveAsync should update user in the database")]
+        public async Task SaveAsync_Should_Update_User_In_Database()
+        {
+            // Arrange
+            var user = new User { Id = "1", Email = "user1@example.com", PhoneNumber = "+5540028922" };
+            user.SetName("Name 1");
+            user.SetLastName("Last Name 1");
+            user.SetCpf("123.456.789-10");
+            user.SetRole("Admin");
+
+            _appDbContext.Users.Add(user);
+            await _appDbContext.SaveChangesAsync();
+
+            // Update user details
+            user.SetName("Updated Name 1");
+            user.SetLastName("Updated Last Name 1");
+
+            // Act
+            await _authenticatedRepository.SaveAsync(user);
+
+            // Assert
+            var updatedUser = await _appDbContext.Users.FindAsync(user.Id);
+            updatedUser.Should().NotBeNull();
+            updatedUser!.Name.Should().Be("Updated Name 1");
+            updatedUser.LastName.Should().Be("Updated Last Name 1");
+        }
+
+        [Fact(DisplayName = "SaveAsync should throw an exception if user is null")]
+        public async Task SaveAsync_Should_Throw_Exception_If_User_Is_Null()
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _authenticatedRepository.SaveAsync(null!));
         }
     }
 }

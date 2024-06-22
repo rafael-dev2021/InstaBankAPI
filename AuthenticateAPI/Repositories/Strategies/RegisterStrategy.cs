@@ -67,6 +67,7 @@ public class RegisterStrategy(
         appUser.SetName(request.Name);
         appUser.SetLastName(request.LastName);
         appUser.SetCpf(request.Cpf);
+        appUser.SetRole("User");
 
         var result = await userManager.CreateAsync(appUser, request.Password);
 

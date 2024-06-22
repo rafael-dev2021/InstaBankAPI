@@ -9,6 +9,7 @@ public static class DependencyInjectionRepositories
     public static void AddDependencyInjectionRepositories(this IServiceCollection service)
     {
         service.AddScoped<IAuthenticatedRepository, AuthenticatedRepository>();
+        service.AddScoped<ITokenRepository, TokenRepository>();
         service.AddScoped<IUserRoleRepository, UserRoleRepository>();
         service.AddScoped<IAuthenticatedStrategy, AuthenticatedStrategy>();
         service.AddScoped<IRegisterStrategy, RegisterStrategy>();

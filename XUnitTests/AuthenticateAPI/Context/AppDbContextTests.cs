@@ -46,4 +46,64 @@ public class AppDbContextTests
         // Assert
         Assert.NotNull(userEntity);
     }
+    
+    [Fact]
+    public void CanAddAndRetrieveToken()
+    {
+        // Arrange
+        var options = GetInMemoryDbContextOptions();
+        
+        var token = new Token();
+        token.SetId(1);
+        token.SetTokenValue("TestToken");
+        token.SetTokenRevoked(false);
+        token.SetTokenExpired(false);
+        token.SetTokenType(TokenType.Bearer);
+
+        // Act
+        using (var context = new AppDbContext(options))
+        {
+            context.Tokens.Add(token);
+            context.SaveChanges();
+        }
+
+        // Assert
+        using (var context = new AppDbContext(options))
+        {
+            var retrievedToken = context.Tokens.Find(token.Id);
+            Assert.NotNull(retrievedToken);
+            Assert.Equal("TestToken", retrievedToken.TokenValue);
+        }
+    }
+
+    [Fact]
+    public void CanRemoveToken()
+    {
+        // Arrange
+        var options = GetInMemoryDbContextOptions();
+        
+        var token = new Token();
+        token.SetId(1);
+        token.SetTokenValue("TestToken");
+        token.SetTokenRevoked(false);
+        token.SetTokenExpired(false);
+        token.SetTokenType(TokenType.Bearer);
+
+        // Act
+        using (var context = new AppDbContext(options))
+        {
+            context.Tokens.Add(token);
+            context.SaveChanges();
+
+            context.Tokens.Remove(token);
+            context.SaveChanges();
+        }
+
+        // Assert
+        using (var context = new AppDbContext(options))
+        {
+            var retrievedToken = context.Tokens.Find(token.Id);
+            Assert.Null(retrievedToken);
+        }
+    }
 }

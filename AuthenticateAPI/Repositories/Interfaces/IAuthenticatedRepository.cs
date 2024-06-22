@@ -14,4 +14,5 @@ public interface IAuthenticatedRepository
     Task<User?> GetUserProfileAsync(string userEmail);
     Task<bool> ForgotPasswordAsync(string email, string newPassword);
     Task LogoutAsync();
+    Task SaveAsync(User user);
 }

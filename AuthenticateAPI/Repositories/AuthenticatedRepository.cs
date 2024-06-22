@@ -78,16 +78,9 @@ public class AuthenticatedRepository(
     public async Task<User?> GetUserProfileAsync(string userEmail)
     {
         var user = await userManager.FindByEmailAsync(userEmail);
-        if (user == null) return null;
-
-        var userProfile = new User();
-        userProfile.SetName(user.Name);
-        userProfile.SetLastName(user.LastName);
-        userProfile.SetEmail(user.Email);
-        userProfile.SetPhoneNumber(user.PhoneNumber!);
-
-        return userProfile;
+        return user ?? null;
     }
+
 
     public async Task<bool> ForgotPasswordAsync(string email, string newPassword)
     {
@@ -103,5 +96,11 @@ public class AuthenticatedRepository(
     public async Task LogoutAsync()
     {
         await signInManager.SignOutAsync();
+    }
+    
+    public async Task SaveAsync(User user)
+    {
+        appDbContext.Update(user);
+        await appDbContext.SaveChangesAsync();
     }
 }

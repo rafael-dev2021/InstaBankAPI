@@ -41,6 +41,9 @@ public static class FluentValidationDependencyInjection
         
         service.AddValidatorsFromAssemblyContaining<ForgotPasswordDtoRequestValidator>();
         service.AddScoped<IValidator<ForgotPasswordDtoRequest>, ForgotPasswordDtoRequestValidator>();
+
+        service.AddValidatorsFromAssemblyContaining<RefreshTokenDtoRequestValidator>();
+        service.AddScoped<IValidator<RefreshTokenDtoRequest>, RefreshTokenDtoRequestValidator>();
         
         service.AddFluentValidationAutoValidation();
         service.AddFluentValidationClientsideAdapters();

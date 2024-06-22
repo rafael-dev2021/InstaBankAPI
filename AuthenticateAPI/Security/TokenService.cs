@@ -5,7 +5,7 @@ using AuthenticateAPI.Models;
 using Microsoft.IdentityModel.Tokens;
 
 namespace AuthenticateAPI.Security;
-
+ 
 public class TokenService(JwtSettings jwtSettings, ILogger<TokenService> logger) : ITokenService
 {
     public string GenerateToken(User user, int expirationToken)
@@ -20,7 +20,9 @@ public class TokenService(JwtSettings jwtSettings, ILogger<TokenService> logger)
             {
                 new Claim(ClaimTypes.Name, user.Email!),
                 new Claim("Name", user.Name!),
-                new Claim(ClaimTypes.NameIdentifier, user.Id)
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Email, user.Email!), 
+                new Claim(ClaimTypes.Role, user.Role!) 
             }),
             Expires = DateTime.UtcNow.AddMinutes(expirationToken),
             SigningCredentials =
