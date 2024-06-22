@@ -17,6 +17,17 @@ public class BaseEntityValidatorTests
         entity.SetAccountNumber("123456789");
         entity.SetAgency("1234");
         entity.SetBalance(1000.00m);
+        
+        var address = new Address();
+        address.SetId(1);
+        address.SetStreet("street");
+        address.SetNumber("123");
+        address.SetCity("Valid City");
+        address.SetState("Valid State");
+        address.SetPostalCode("12345-678");
+        address.SetCountry("Valid Country");
+        
+        entity.SetAddress(address);
 
         // Act
         var result = _validator.TestValidate(entity);

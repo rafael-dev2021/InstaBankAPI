@@ -21,13 +21,17 @@ public class IndividualAccountValidatorTests
         account.SetAccountNumber("123456789");
         account.SetAgency("1234");
         account.SetBalance(1000.00m);
+        account.SetAddressId(1);
+        
         var address = new Address();
+        address.SetId(1);
         address.SetStreet("street");
         address.SetNumber("123");
         address.SetCity("Valid City");
         address.SetState("Valid State");
         address.SetPostalCode("12345-678");
         address.SetCountry("Valid Country");
+        
         account.SetAddress(address);
 
         // Act

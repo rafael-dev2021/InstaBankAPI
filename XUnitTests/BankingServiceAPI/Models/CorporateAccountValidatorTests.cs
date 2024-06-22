@@ -94,35 +94,43 @@ public class CorporateAccountValidatorTests
     {
         // Arrange
         var account = new CorporateAccount();
-        account.SetBusinessAddress(null);
+        account.SetAddress(null);
 
         // Act
         var result = _validator.TestValidate(account);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.BusinessAddress)
-            .WithErrorMessage("Business address is required.");
+        result.ShouldHaveValidationErrorFor(x => x.Address)
+            .WithErrorMessage("Address is required.");
     }
 
     [Fact]
     public void Should_Not_Have_Error_When_BusinessAddress_Is_Valid()
     {
         // Arrange
-        var validAddress = new Address();
-        validAddress.SetStreet("Street");
-        validAddress.SetNumber("123");
-        validAddress.SetCity("City");
-        validAddress.SetState("State");
-        validAddress.SetPostalCode("12345-678");
-        validAddress.SetCountry("Country");
-
         var account = new CorporateAccount();
-        account.SetBusinessAddress(validAddress);
+        account.SetId(new Guid("e8c1a4d4-9d45-4b8d-a5d6-3f1a48794b2f"));
+        account.SetCnpj("12.345.678/0001-01");
+        account.SetAccountNumber("123456789");
+        account.SetAgency("1234");
+        account.SetBalance(1000.00m);
+        account.SetAddressId(1);
+        
+        var address = new Address();
+        address.SetId(1);
+        address.SetStreet("street");
+        address.SetNumber("123");
+        address.SetCity("Valid City");
+        address.SetState("Valid State");
+        address.SetPostalCode("12345-678");
+        address.SetCountry("Valid Country");
+        
+        account.SetAddress(address);
 
         // Act
         var result = _validator.TestValidate(account);
 
         // Assert
-        result.ShouldNotHaveValidationErrorFor(x => x.BusinessAddress);
+        result.ShouldNotHaveValidationErrorFor(x => x.Address);
     }
 }

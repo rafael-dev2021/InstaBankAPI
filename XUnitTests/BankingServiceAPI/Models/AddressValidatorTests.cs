@@ -13,6 +13,7 @@ public class AddressValidatorTests
     {
         // Arrange
         var address = new Address();
+        address.SetId(1);
         address.SetStreet("street");
         address.SetNumber("123");
         address.SetCity("Valid City");
