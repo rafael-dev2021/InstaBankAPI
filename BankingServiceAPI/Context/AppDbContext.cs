@@ -8,6 +8,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<IndividualAccount> IndividualAccounts { get; init; }
     public DbSet<CorporateAccount> CorporateAccounts { get; init; }
     public DbSet<Address> Addresses { get; init; }
+    public DbSet<BaseEntity> BaseEntities { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
