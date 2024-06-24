@@ -4,24 +4,24 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BankingServiceAPI.Context;
 
-public class AccountConfiguration : IEntityTypeConfiguration<BankAccount>
+public class BankAccountConfiguration : IEntityTypeConfiguration<BankAccount>
 {
     public void Configure(EntityTypeBuilder<BankAccount> builder)
     {
-        builder.HasKey(e => e.AccountNumber);
-        
+        builder.HasKey(e => e.Id);
+
         builder.Property(e => e.AccountNumber)
-            .IsRequired()
-            .HasMaxLength(20);
+            .HasMaxLength(6)
+            .IsRequired();
 
         builder.Property(e => e.Agency)
-            .IsRequired()
-            .HasMaxLength(4);
+            .HasMaxLength(4)
+            .IsRequired();
 
         builder.Property(e => e.Balance)
             .IsRequired()
             .HasColumnType("decimal(18,2)");
-        
+
         builder.Property(t => t.AccountType)
             .HasConversion(
                 v => v.ToString(),

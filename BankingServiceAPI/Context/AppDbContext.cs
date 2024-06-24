@@ -3,12 +3,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BankingServiceAPI.Context;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options) 
 {
-    public DbSet<IndividualAccount> IndividualAccounts { get; init; }
-    public DbSet<CorporateAccount> CorporateAccounts { get; init; }
-    public DbSet<Address> Addresses { get; init; }
-    public DbSet<BaseEntity> BaseEntities { get; init; }
+    public DbSet<BankAccount> BankAccounts { get; init; }
+    public DbSet<BankTransaction> BankTransactions { get; init; }
+    public DbSet<TransactionLog> TransactionLogs { get; init; }
+    public DbSet<User> Users { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
