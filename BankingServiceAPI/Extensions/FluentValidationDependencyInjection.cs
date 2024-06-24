@@ -1,4 +1,6 @@
-﻿using BankingServiceAPI.FluentValidations.Models;
+﻿using BankingServiceAPI.Dto.Request;
+using BankingServiceAPI.FluentValidations.Dto.Request;
+using BankingServiceAPI.FluentValidations.Models;
 using BankingServiceAPI.Models;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -9,18 +11,12 @@ public static class FluentValidationDependencyInjection
 {
     public static void AddFluentValidationDependencyInjection(this IServiceCollection service)
     {
-        service.AddValidatorsFromAssemblyContaining<BaseEntityValidator>();
-        service.AddScoped<IValidator<BaseEntity>, BaseEntityValidator>();
-        
-        service.AddValidatorsFromAssemblyContaining<IndividualAccountValidator>();
-        service.AddScoped<IValidator<IndividualAccount>, IndividualAccountValidator>();
+        service.AddValidatorsFromAssemblyContaining<BankAccountValidator>();
+        service.AddTransient<IValidator<BankAccount>, BankAccountValidator>();
 
-        service.AddValidatorsFromAssemblyContaining<CorporateAccountValidator>();
-        service.AddScoped<IValidator<CorporateAccount>, CorporateAccountValidator>();
-        
-        service.AddValidatorsFromAssemblyContaining<AddressValidator>();
-        service.AddScoped<IValidator<Address>, AddressValidator>();
-        
+        service.AddValidatorsFromAssemblyContaining<BankAccountDtoRequestValidator>();
+        service.AddTransient<IValidator<BankAccountDtoRequest>, BankAccountDtoRequestValidator>();
+
         service.AddFluentValidationAutoValidation();
         service.AddFluentValidationClientsideAdapters();
     }

@@ -7,5 +7,7 @@ public static class InfrastructureModule
         service.AddDatabaseDependencyInjection();
         service.AddFluentValidationDependencyInjection();
         service.AddDependencyInjectionRepositories();
+        service.AddMappingProfileDependencyInjection();
+        service.AddDependencyInjectionServices();
     }
 }
