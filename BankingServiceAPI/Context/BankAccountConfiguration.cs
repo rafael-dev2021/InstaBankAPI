@@ -4,15 +4,15 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BankingServiceAPI.Context;
 
-public class BaseEntityConfiguration : IEntityTypeConfiguration<BaseEntity>
+public class AccountConfiguration : IEntityTypeConfiguration<BankAccount>
 {
-    public void Configure(EntityTypeBuilder<BaseEntity> builder)
+    public void Configure(EntityTypeBuilder<BankAccount> builder)
     {
-        builder.HasKey(e => e.Id);
-
+        builder.HasKey(e => e.AccountNumber);
+        
         builder.Property(e => e.AccountNumber)
             .IsRequired()
-            .HasMaxLength(9);
+            .HasMaxLength(20);
 
         builder.Property(e => e.Agency)
             .IsRequired()
@@ -21,10 +21,11 @@ public class BaseEntityConfiguration : IEntityTypeConfiguration<BaseEntity>
         builder.Property(e => e.Balance)
             .IsRequired()
             .HasColumnType("decimal(18,2)");
-
-        builder.HasOne(e => e.Address)
-            .WithOne()
-            .HasForeignKey<BaseEntity>(e => e.AddressId)
-            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.Property(t => t.AccountType)
+            .HasConversion(
+                v => v.ToString(),
+                v => (AccountType)Enum.Parse(typeof(AccountType), v))
+            .IsRequired();
     }
 }
