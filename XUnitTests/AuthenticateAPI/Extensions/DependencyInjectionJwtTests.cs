@@ -22,7 +22,7 @@ public class DependencyInjectionJwtTests
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string>
             {
-                { "Jwt:SecretKey", "SuperSecretKey12345" },
+                { "Jwt:SecretKey", GenerateKey.GenerateHmac256Key() },
                 { "Jwt:Issuer", "http://localhost" },
                 { "Jwt:Audience", "http://localhost" },
                 { "EXPIRES_TOKEN", "15" },
