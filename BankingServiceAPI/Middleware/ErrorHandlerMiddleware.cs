@@ -37,15 +37,12 @@ public class ErrorHandlerMiddleware(RequestDelegate next, ILogger<ErrorHandlerMi
                 responseModel = new { message = exception.Message };
                 break;
             case AccountNotFoundException:
+            case GetIdNotFoundException:
                 statusCode = HttpStatusCode.NotFound;
                 responseModel = new { message = exception.Message };
                 break;
             case BankAccountDtoServiceException:
                 statusCode = HttpStatusCode.BadRequest;
-                responseModel = new { message = exception.Message };
-                break;
-            case GetIdNotFoundException:
-                statusCode = HttpStatusCode.NotFound;
                 responseModel = new { message = exception.Message };
                 break;
         }

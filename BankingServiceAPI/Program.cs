@@ -31,4 +31,4 @@ app.UseAuthorization();
 
 app.AddMapEndpointsDependencyInjection();
 
-app.Run();
+await app.RunAsync();
