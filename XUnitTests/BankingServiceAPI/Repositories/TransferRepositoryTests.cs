@@ -1,7 +1,6 @@
 ﻿using BankingServiceAPI.Context;
 using BankingServiceAPI.Models;
 using BankingServiceAPI.Repositories;
-using BankingServiceAPI.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace XUnitTests.BankingServiceAPI.Repositories;
@@ -9,7 +8,7 @@ namespace XUnitTests.BankingServiceAPI.Repositories;
 public class TransferRepositoryTests
 {
     private readonly AppDbContext _context;
-    private readonly ITransferRepository _transferRepository;
+    private readonly TransferRepository _transferRepository;
 
     public TransferRepositoryTests()
     {
