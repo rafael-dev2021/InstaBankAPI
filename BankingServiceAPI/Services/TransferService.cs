@@ -9,25 +9,29 @@ public class TransferService(
     ITransferRepository transferRepository,
     IBankTransactionRepository bankTransactionRepository) : ITransferService
 {
-    public async Task<Transfer> TransferAsync(int originAccountNumber, int destinationAccountNumber, decimal amount)
+    public async Task<Transfer> TransferAsync(string userId, int originAccountNumber, int destinationAccountNumber,
+        decimal amount)
     {
         var originAccount = await transferRepository.GetByAccountNumberAsync(originAccountNumber);
         var destinationAccount = await transferRepository.GetByAccountNumberAsync(destinationAccountNumber);
 
-        return await ExecuteTransferAsync(originAccount, destinationAccount, amount);
+        return await ExecuteTransferAsync(userId, originAccount, destinationAccount, amount);
     }
 
-    public async Task<Transfer> TransferByCpfAsync(string? originCpf, string? destinationCpf, decimal amount)
+    public async Task<Transfer> TransferByCpfAsync(string userId, string? originCpf, string? destinationCpf,
+        decimal amount)
     {
         var originAccount = await transferRepository.GetByCpfAsync(originCpf!);
         var destinationAccount = await transferRepository.GetByCpfAsync(destinationCpf!);
 
-        return await ExecuteTransferAsync(originAccount, destinationAccount, amount);
+        return await ExecuteTransferAsync(userId, originAccount, destinationAccount, amount);
     }
-    
-    private async Task<Transfer> ExecuteTransferAsync(BankAccount? originAccount, BankAccount? destinationAccount, decimal amount)
+
+    private async Task<Transfer> ExecuteTransferAsync(string? userId, BankAccount? originAccount,
+        BankAccount? destinationAccount,
+        decimal amount)
     {
-        ValidateAccounts(originAccount, destinationAccount);
+        ValidateAccounts(userId, originAccount, destinationAccount);
 
         var transfer = new Transfer();
         transfer.SetAccountOrigin(originAccount!);
@@ -41,8 +45,8 @@ public class TransferService(
 
         return transfer;
     }
-    
-    private static void ValidateAccounts(BankAccount? originAccount, BankAccount? destinationAccount)
+
+    private static void ValidateAccounts(string? userId, BankAccount? originAccount, BankAccount? destinationAccount)
     {
         if (originAccount == null)
         {
@@ -52,6 +56,11 @@ public class TransferService(
         if (destinationAccount == null)
         {
             throw new AccountNotFoundException("Destination account not found.");
+        }
+
+        if (originAccount.User == null || originAccount.User.Id != userId)
+        {
+            throw new UnauthorizedAccessException("User not authorized to transfer from this account.");
         }
     }
 }
