@@ -9,9 +9,12 @@ public static class DependencyInjectionRepositories
 {
     public static void AddDependencyInjectionRepositories(this IServiceCollection service)
     {
-        service.AddScoped<IBankAccountRepository, BankAccountRepository>();
-        service.AddScoped<IBankTransactionRepository, BankTransactionRepository>();
-        service.AddScoped<IAccountNumberGenerator, AccountNumberGenerator>();
-        service.AddScoped<ITransferRepository, TransferRepository>();
+        service
+            .AddScoped<IBankAccountRepository, BankAccountRepository>()
+            .AddScoped<IBankTransactionRepository, BankTransactionRepository>()
+            .AddScoped<IAccountNumberGenerator, AccountNumberGenerator>()
+            .AddScoped<ITransferRepository, TransferRepository>()
+            .AddScoped<IDepositRepository, DepositRepository>()
+            .AddScoped<IWithdrawRepository, WithdrawRepository>();
     }
 }

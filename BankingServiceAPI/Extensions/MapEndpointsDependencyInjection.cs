@@ -8,5 +8,7 @@ public static class MapEndpointsDependencyInjection
     {
         app.MapBankAccountEndpoints();
         app.MapTransferEndpoint();
+        app.MapDepositEndpoint();
+        app.MapWithdrawEndpoint();
     }
 }

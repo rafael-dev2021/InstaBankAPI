@@ -7,8 +7,11 @@ public static class DependencyInjectionServices
 {
     public static void AddDependencyInjectionServices(this IServiceCollection service)
     {
-        service.AddScoped<IBankAccountDtoService, BankAccountDtoService>();
-        service.AddScoped<IUserContextService, UserContextService>();
-        service.AddScoped<ITransferService, TransferService>();
+        service
+            .AddScoped<IBankAccountDtoService, BankAccountDtoService>()
+            .AddScoped<IUserContextService, UserContextService>()
+            .AddScoped<ITransferService, TransferService>()
+            .AddScoped<IDepositService, DepositService>()
+            .AddScoped<IWithdrawService, WithdrawService>();
     }
 }

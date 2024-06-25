@@ -23,6 +23,12 @@ public static class FluentValidationDependencyInjection
         service.AddValidatorsFromAssemblyContaining<TransferDtoRequestByCpfValidator>();
         service.AddTransient<IValidator<TransferDtoRequestByCpf>, TransferDtoRequestByCpfValidator>();
 
+        service.AddValidatorsFromAssemblyContaining<DepositDtoRequestValidator>();
+        service.AddTransient<IValidator<DepositDtoRequest>, DepositDtoRequestValidator>();
+        
+        service.AddValidatorsFromAssemblyContaining<WithdrawDtoRequestValidator>();
+        service.AddTransient<IValidator<WithdrawDtoRequest>, WithdrawDtoRequestValidator>();
+        
         service.AddFluentValidationAutoValidation();
         service.AddFluentValidationClientsideAdapters();
     }
