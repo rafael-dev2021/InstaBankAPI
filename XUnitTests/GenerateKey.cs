@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography;
 
-namespace XUnitTests.AuthenticateAPI;
+namespace XUnitTests;
 
 public class GenerateKey
 {
