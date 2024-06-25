@@ -1,5 +1,6 @@
 ﻿using BankingServiceAPI.Dto.Request;
 using BankingServiceAPI.Dto.Response;
+using BankingServiceAPI.Endpoints.Strategies;
 using BankingServiceAPI.Services.Interfaces;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
@@ -40,7 +41,7 @@ public static class BankAccountEndpoint
         );
     }
 
-    public static void MapGetEndpoint<T>(
+    private static void MapGetEndpoint<T>(
         WebApplication app,
         string route,
         Func<IBankAccountDtoService, Task<T>> handler,
@@ -50,25 +51,26 @@ public static class BankAccountEndpoint
             [FromServices] IBankAccountDtoService service,
             HttpContext context) =>
         {
-            if (requireAuthentication)
+            try
             {
-                if (!context.User.Identity!.IsAuthenticated)
+                var authResult =
+                    AuthenticationRules.CheckAuthenticationAndAuthorization(context, requireAuthentication);
+                if (authResult != null)
                 {
-                    return Results.StatusCode(StatusCodes.Status401Unauthorized);
+                    return authResult;
                 }
 
-                if (!context.User.IsInRole("Admin"))
-                {
-                    return Results.StatusCode(StatusCodes.Status403Forbidden);
-                }
+                var result = await handler(service);
+                return Results.Ok(result);
             }
-
-            var result = await handler(service);
-            return Results.Ok(result);
+            catch (UnauthorizedAccessException ex)
+            {
+                return AuthenticationRules.HandleUnauthorizedAccessException(ex);
+            }
         });
     }
 
-    public static void MapGetEndpoint<T>(
+    private static void MapGetEndpoint<T>(
         WebApplication app,
         string route,
         Func<IBankAccountDtoService, int?, Task<T>> handler,
@@ -79,25 +81,26 @@ public static class BankAccountEndpoint
             int? id,
             HttpContext context) =>
         {
-            if (requireAuthentication)
+            try
             {
-                if (!context.User.Identity!.IsAuthenticated)
+                var authResult =
+                    AuthenticationRules.CheckAuthenticationAndAuthorization(context, requireAuthentication);
+                if (authResult != null)
                 {
-                    return Results.StatusCode(StatusCodes.Status401Unauthorized);
+                    return authResult;
                 }
 
-                if (!context.User.IsInRole("Admin"))
-                {
-                    return Results.StatusCode(StatusCodes.Status403Forbidden);
-                }
+                var result = await handler(service, id);
+                return Results.Ok(result);
             }
-
-            var result = await handler(service, id);
-            return Results.Ok(result);
+            catch (UnauthorizedAccessException ex)
+            {
+                return AuthenticationRules.HandleUnauthorizedAccessException(ex);
+            }
         });
     }
 
-    public static void MapPostEndpoint<T>(
+    private static void MapPostEndpoint<T>(
         WebApplication app,
         string route,
         Func<IBankAccountDtoService, T, HttpContext, Task> handler,
@@ -110,23 +113,30 @@ public static class BankAccountEndpoint
             [FromServices] IValidator<T> validator,
             HttpContext context) =>
         {
-            if (requireAuthentication && !context.User.Identity!.IsAuthenticated)
+            try
             {
-                return Results.StatusCode(StatusCodes.Status401Unauthorized);
-            }
+                if (requireAuthentication && !context.User.Identity!.IsAuthenticated)
+                {
+                    return Results.StatusCode(StatusCodes.Status401Unauthorized);
+                }
 
-            var validationResult = await ValidateAsync(request, validator);
-            if (validationResult != null)
+                var validationResult = await RequestValidator.ValidateAsync(request, validator);
+                if (validationResult != null)
+                {
+                    return validationResult;
+                }
+
+                await handler(service, request, context);
+                return Results.StatusCode(expectedStatusCode);
+            }
+            catch (UnauthorizedAccessException ex)
             {
-                return validationResult;
+                return AuthenticationRules.HandleUnauthorizedAccessException(ex);
             }
-
-            await handler(service, request, context);
-            return Results.StatusCode(expectedStatusCode);
         });
     }
 
-    public static void MapDeleteEndpoint(
+    private static void MapDeleteEndpoint(
         WebApplication app,
         string route,
         Func<IBankAccountDtoService, int?, Task> handler,
@@ -137,27 +147,22 @@ public static class BankAccountEndpoint
             int? id,
             HttpContext context) =>
         {
-            if (requireAuthentication)
+            try
             {
-                if (!context.User.Identity!.IsAuthenticated)
+                var authResult =
+                    AuthenticationRules.CheckAuthenticationAndAuthorization(context, requireAuthentication);
+                if (authResult != null)
                 {
-                    return Results.StatusCode(StatusCodes.Status401Unauthorized);
+                    return authResult;
                 }
 
-                if (!context.User.IsInRole("Admin"))
-                {
-                    return Results.StatusCode(StatusCodes.Status403Forbidden);
-                }
+                await handler(service, id);
+                return Results.Ok();
             }
-
-            await handler(service, id);
-            return Results.Ok();
+            catch (UnauthorizedAccessException ex)
+            {
+                return AuthenticationRules.HandleUnauthorizedAccessException(ex);
+            }
         });
-    }
-
-    public static async Task<IResult?> ValidateAsync<T>(T request, IValidator<T> validator)
-    {
-        var result = await validator.ValidateAsync(request);
-        return !result.IsValid ? Results.ValidationProblem(result.ToDictionary()) : null;
     }
 }
