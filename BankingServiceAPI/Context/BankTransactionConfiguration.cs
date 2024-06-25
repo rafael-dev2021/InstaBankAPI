@@ -9,7 +9,7 @@ public class BankTransactionConfiguration : IEntityTypeConfiguration<BankTransac
     public void Configure(EntityTypeBuilder<BankTransaction> builder)
     {
         builder.HasKey(e => e.Id);
-        
+
         builder.HasDiscriminator<string>("TransactionType")
             .HasValue<Deposit>("Deposit")
             .HasValue<Transfer>("Transfer")
@@ -19,8 +19,9 @@ public class BankTransactionConfiguration : IEntityTypeConfiguration<BankTransac
             .IsRequired()
             .HasColumnType("decimal(18,2)");
 
-        builder.Property(e => e.TimeDate)
-            .IsRequired();
+        builder.Property(e => e.TransferDate)
+            .IsRequired()
+            .HasColumnType("datetime2");
 
         builder.HasOne(e => e.AccountOrigin)
             .WithMany()
