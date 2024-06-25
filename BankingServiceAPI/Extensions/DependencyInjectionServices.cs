@@ -9,5 +9,6 @@ public static class DependencyInjectionServices
     {
         service.AddScoped<IBankAccountDtoService, BankAccountDtoService>();
         service.AddScoped<IUserContextService, UserContextService>();
+        service.AddScoped<ITransferService, TransferService>();
     }
 }

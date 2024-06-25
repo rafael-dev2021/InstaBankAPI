@@ -17,6 +17,12 @@ public static class FluentValidationDependencyInjection
         service.AddValidatorsFromAssemblyContaining<BankAccountDtoRequestValidator>();
         service.AddTransient<IValidator<BankAccountDtoRequest>, BankAccountDtoRequestValidator>();
 
+        service.AddValidatorsFromAssemblyContaining<TransferDtoRequestByAccountValidator>();
+        service.AddTransient<IValidator<TransferDtoRequestByAccount>, TransferDtoRequestByAccountValidator>();
+        
+        service.AddValidatorsFromAssemblyContaining<TransferDtoRequestByCpfValidator>();
+        service.AddTransient<IValidator<TransferDtoRequestByCpf>, TransferDtoRequestByCpfValidator>();
+
         service.AddFluentValidationAutoValidation();
         service.AddFluentValidationClientsideAdapters();
     }
