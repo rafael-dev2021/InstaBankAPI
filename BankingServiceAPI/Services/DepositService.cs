@@ -13,20 +13,24 @@ public class DepositService(
 {
     public async Task<Deposit> DepositAsync(string userId, int accountNumber, decimal amount)
     {
-        logger.LogInformation("Deposit account called");
+        logger.LogInformation("Attempting to deposit {Amount} to account number {AccountNumber} for user {UserId}",
+            amount, accountNumber, userId);
 
         var account = await depositRepository.GetByAccountNumberAsync(accountNumber);
         if (account == null)
         {
+            logger.LogWarning("Account number {AccountNumber} not found for user {UserId}", accountNumber, userId);
             throw new AccountNotFoundException("Account not found.");
         }
 
         if (account.User == null || account.User.Id != userId)
         {
+            logger.LogWarning("User {UserId} is not authorized to deposit to account number {AccountNumber}", userId,
+                accountNumber);
             throw new UnauthorizedAccessException("User not authorized to deposit to this account.");
         }
 
-        logger.LogInformation("Account found: {account}", account.User!.Name);
+        logger.LogInformation("Account found: {Email}, proceeding with deposit", account.User!.Email);
 
         var deposit = new Deposit();
         deposit.SetAccountOrigin(account);
@@ -35,12 +39,17 @@ public class DepositService(
         deposit.SetAccountDestinationId(account.Id);
         deposit.SetAmount(amount);
         deposit.SetTransferDate(DateTime.Now);
-        logger.LogInformation("Deposit created");
+
+        logger.LogInformation("Deposit entity created for account number {AccountNumber} with amount {Amount}",
+            accountNumber, amount);
 
         deposit.Execute();
-        logger.LogInformation("Deposit executed");
 
         await bankTransactionRepository.CreateEntityAsync(deposit);
+
+        logger.LogInformation(
+            "Deposit of {Amount} to account number {AccountNumber} for user {UserId} successfully completed", amount,
+            accountNumber, userId);
 
         return deposit;
     }
