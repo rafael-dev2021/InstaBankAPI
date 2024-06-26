@@ -11,7 +11,7 @@ public static class DepositEndpoint
     public static void MapDepositEndpoint(this WebApplication app)
     {
         app.MapPost("/v1/bank/deposit", async (
-            [FromServices] IDepositService service,
+            [FromServices] IDepositDtoService service,
             [FromBody] DepositDtoRequest request,
             [FromServices] IValidator<DepositDtoRequest> validator,
             HttpContext context) =>
@@ -24,7 +24,7 @@ public static class DepositEndpoint
 
             return await RequestHandler.HandleServiceCallAsync(async () =>
             {
-                var deposit = await service.DepositAsync(userId!, request.AccountNumber, request.Amount);
+                var deposit = await service.DepositDtoAsync(userId!, request.AccountNumber, request.Amount);
                 return Results.Ok(deposit);
             });
         }).RequireAuthorization();

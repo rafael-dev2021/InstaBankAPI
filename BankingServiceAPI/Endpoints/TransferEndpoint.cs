@@ -13,7 +13,7 @@ public static class TransferEndpoint
         MapPostEndpoint<TransferDtoRequestByAccount>(
             app,
             "/v1/transfer/by-account-number",
-            async (service, userId, request) => await service.TransferAsync(
+            async (service, userId, request) => await service.TransferByBankAccountNumberDtoAsync(
                 userId,
                 request.OriginAccountNumber,
                 request.DestinationAccountNumber,
@@ -23,7 +23,7 @@ public static class TransferEndpoint
         MapPostEndpoint<TransferDtoRequestByCpf>(
             app,
             "/v1/transfer/by-cpf",
-            async (service, userId, request) => await service.TransferByCpfAsync(
+            async (service, userId, request) => await service.TransferByCpfDtoAsync(
                 userId,
                 request.OriginCpf!,
                 request.DestinationCpf,
@@ -31,14 +31,14 @@ public static class TransferEndpoint
         );
     }
 
-    public static void MapPostEndpoint<T>(
+    private static void MapPostEndpoint<T>(
         WebApplication app,
         string route,
-        Func<ITransferService, string, T, Task<object>> handler,
+        Func<ITransferDtoService, string, T, Task<object>> handler,
         int expectedStatusCode = StatusCodes.Status200OK) where T : class
     {
         app.MapPost(route, async (
-            [FromServices] ITransferService service,
+            [FromServices] ITransferDtoService service,
             [FromBody] T request,
             [FromServices] IValidator<T> validator,
             HttpContext context) =>

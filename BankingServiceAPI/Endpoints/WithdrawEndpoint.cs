@@ -11,7 +11,7 @@ public static class WithdrawEndpoint
     public static void MapWithdrawEndpoint(this WebApplication app)
     {
         app.MapPost("/v1/bank/withdraw", async (
-            [FromServices] IWithdrawService service,
+            [FromServices] IWithdrawDtoService service,
             [FromBody] WithdrawDtoRequest request,
             [FromServices] IValidator<WithdrawDtoRequest> validator,
             HttpContext context) =>
@@ -24,7 +24,7 @@ public static class WithdrawEndpoint
 
             return await RequestHandler.HandleServiceCallAsync(async () =>
             {
-                var withdraw = await service.WithdrawAsync(userId!, request.AccountNumber, request.Amount);
+                var withdraw = await service.WithdrawDtoAsync(userId!, request.AccountNumber, request.Amount);
                 return Results.Ok(withdraw);
             });
         }).RequireAuthorization();
