@@ -13,7 +13,7 @@ public class TransferDtoService(
     ILogger<TransferDtoService> logger,
     IMapper mapper) : ITransferDtoService
 {
-    public async Task<TransferByBankAccountNumberDtoResponse> TransferByBankAccountNumberAsync(string userId,
+    public async Task<TransferByBankAccountNumberDtoResponse> TransferByBankAccountNumberDtoAsync(string userId,
         int originAccountNumber, int destinationAccountNumber,
         decimal amount)
     {
@@ -29,7 +29,7 @@ public class TransferDtoService(
         return mapper.Map<TransferByBankAccountNumberDtoResponse>(transfer);
     }
 
-    public async Task<TransferDtoResponse> TransferByCpfAsync(string userId, string? originCpf, string? destinationCpf,
+    public async Task<TransferDtoResponse> TransferByCpfDtoAsync(string userId, string? originCpf, string? destinationCpf,
         decimal amount)
     {
         logger.LogInformation(
