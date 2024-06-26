@@ -29,7 +29,7 @@ public class TransferDtoService(
         return mapper.Map<TransferByBankAccountNumberDtoResponse>(transfer);
     }
 
-    public async Task<TransferDtoResponse> TransferByCpfDtoAsync(string userId, string? originCpf, string? destinationCpf,
+    public async Task<TransferByCpfDtoResponse> TransferByCpfDtoAsync(string userId, string? originCpf, string? destinationCpf,
         decimal amount)
     {
         logger.LogInformation(
@@ -41,7 +41,7 @@ public class TransferDtoService(
 
         var transfer = await ExecuteTransferAsync(userId, originAccount, destinationAccount, amount);
 
-        return mapper.Map<TransferDtoResponse>(transfer);
+        return mapper.Map<TransferByCpfDtoResponse>(transfer);
     }
 
     private async Task<Transfer> ExecuteTransferAsync(string? userId, BankAccount? originAccount,

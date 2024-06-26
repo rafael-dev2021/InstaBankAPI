@@ -8,8 +8,8 @@ public class MappingTheTransferProfile : Profile
 {
     public MappingTheTransferProfile()
     {
-        CreateMap<Transfer, TransferDtoResponse>()
-            .ConstructUsing(src => new TransferDtoResponse(
+        CreateMap<Transfer, TransferByCpfDtoResponse>()
+            .ConstructUsing(src => new TransferByCpfDtoResponse(
                 src.Id,
                 src.AccountDestination!.User!.Name!,
                 src.AccountDestination.User.LastName!,
