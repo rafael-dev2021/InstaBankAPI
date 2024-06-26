@@ -14,6 +14,14 @@ builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
 
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.IncludeScopes = false; 
+    options.SingleLine = true;
+    options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
+});
+
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
