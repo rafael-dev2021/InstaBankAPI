@@ -14,57 +14,70 @@ public class BankAccountDtoService(
     ILogger<BankAccountDtoService> logger,
     IUserContextService userContextService) : IBankAccountDtoService
 {
+    private const string Message = "An unexpected error occurred while processing the request.";
 
     public async Task<IEnumerable<BankAccountDtoResponse>> GetEntitiesDtoAsync()
     {
-        var entities = await repository.GetEntitiesAsync();
-        logger.LogInformation("Returning all entities");
-        return !entities.Any() ? [] : mapper.Map<IEnumerable<BankAccountDtoResponse>>(entities);
+        try
+        {
+            var entities = await repository.GetEntitiesAsync();
+            logger.LogInformation("Returning all entities");
+            return !entities.Any() ? [] : mapper.Map<IEnumerable<BankAccountDtoResponse>>(entities);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error while getting all entities");
+            throw new BankAccountDtoServiceException(Message, ex);
+        }
     }
 
     public async Task<BankAccountDtoResponse?> GetEntityDtoByIdAsync(int? id)
     {
         logger.LogInformation("Getting entity by id: {Id}", id);
-        var getBankAccountId = await repository.GetEntityByIdAsync(id);
+        var bankAccount = await GetBankAccountOrThrowAsync(id, "get");
 
-        if (getBankAccountId != null)
-        {
-            return mapper.Map<BankAccountDtoResponse>(getBankAccountId);
-        }
-
-        logger.LogWarning("Could not find bank account id: {Id}", id);
-        throw new GetIdNotFoundException($"Could not find bank account id: {id}");
+        return mapper.Map<BankAccountDtoResponse>(bankAccount);
     }
 
     public async Task<BankAccountDtoResponse> AddEntityDtoAsync(BankAccountDtoRequest bankAccountDtoRequest,
         HttpContext httpContext)
     {
-        var user = await userContextService.GetUserFromHttpContextAsync(httpContext);
+        try
+        {
+            var user = await userContextService.GetUserFromHttpContextAsync(httpContext);
 
-        var bankAccount = mapper.Map<BankAccount>(bankAccountDtoRequest);
-        bankAccount.SetUser(user);
+            var bankAccount = mapper.Map<BankAccount>(bankAccountDtoRequest);
+            bankAccount.SetUser(user);
 
-        await repository.CreateEntityAsync(bankAccount);
+            await repository.CreateEntityAsync(bankAccount);
 
-        var createdBankAccount = await repository.GetEntityByIdAsync(bankAccount.Id);
+            var createdBankAccount = await repository.GetEntityByIdAsync(bankAccount.Id);
 
-        var bankAccountDtoResponse = mapper.Map<BankAccountDtoResponse>(createdBankAccount);
+            var bankAccountDtoResponse = mapper.Map<BankAccountDtoResponse>(createdBankAccount);
 
-        return bankAccountDtoResponse;
+            return bankAccountDtoResponse;
+        }
+        catch (Exception ex)
+        {
+            throw new BankAccountDtoServiceException("An unexpected error occurred while processing the request.", ex);
+        }
     }
 
     public async Task DeleteEntityDtoAsync(int? id)
     {
         logger.LogInformation("Deleting entity with id: {Id}", id);
-        var deleteBankAccountId = await repository.GetEntityByIdAsync(id);
+        var bankAccount = await GetBankAccountOrThrowAsync(id, "delete");
 
-        if (deleteBankAccountId == null)
-        {
-            logger.LogWarning("Could not find bank account id: {Id}", id);
-            throw new GetIdNotFoundException($"Could not find bank account id: {id}");
-        }
-
-        await repository.DeleteEntityAsync(deleteBankAccountId.Id);
+        await repository.DeleteEntityAsync(bankAccount.Id);
         logger.LogInformation("Entity with id: {Id} deleted successfully", id);
+    }
+
+    private async Task<BankAccount> GetBankAccountOrThrowAsync(int? id, string action)
+    {
+        var bankAccount = await repository.GetEntityByIdAsync(id);
+        if (bankAccount != null) return bankAccount;
+
+        logger.LogWarning("Could not find bank account '{id}' for action {Action}", id, action);
+        throw new GetIdNotFoundException($"Could not find bank account id: '{id}' ");
     }
 }
