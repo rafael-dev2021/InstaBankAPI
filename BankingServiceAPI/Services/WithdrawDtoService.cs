@@ -7,13 +7,13 @@ using BankingServiceAPI.Services.Interfaces;
 
 namespace BankingServiceAPI.Services;
 
-public class WithdrawService(
+public class WithdrawDtoService(
     IWithdrawRepository withdrawRepository,
     IBankTransactionRepository bankTransactionRepository,
-    ILogger<WithdrawService> logger,
-    IMapper mapper) : IWithdrawService
+    ILogger<WithdrawDtoService> logger,
+    IMapper mapper) : IWithdrawDtoService
 {
-    public async Task<WithdrawDtoResponse> WithdrawAsync(string userId, int accountNumber, decimal amount)
+    public async Task<WithdrawDtoResponse> WithdrawDtoAsync(string userId, int accountNumber, decimal amount)
     {
         logger.LogInformation("Attempting to withdraw {Amount} from account number {AccountNumber} for user {UserId}",
             amount, accountNumber, userId);
