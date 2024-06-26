@@ -14,7 +14,7 @@ public class MappingTheBankAccountProfileTests
         var configuration = new MapperConfiguration(cfg =>
         {
             cfg.AddProfile(new MappingTheBankAccountProfile());
-            cfg.AddProfile(new MappingTheUserProfile()); // Add the user profile here
+            cfg.AddProfile(new MappingTheUserProfile()); 
         });
         _mapper = configuration.CreateMapper();
     }

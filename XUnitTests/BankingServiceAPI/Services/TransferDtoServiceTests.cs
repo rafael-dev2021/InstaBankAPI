@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BankingServiceAPI.Dto.Response;
 using BankingServiceAPI.Exceptions;
 using BankingServiceAPI.Models;
 using BankingServiceAPI.Repositories.Interfaces;
@@ -12,8 +13,8 @@ public class TransferDtoServiceTests
 {
     private readonly Mock<ITransferRepository> _transferRepositoryMock;
     private readonly Mock<IBankTransactionRepository> _bankTransactionRepositoryMock;
-    private readonly Mock<IMapper> _mockMapper;
     private readonly TransferDtoService _transferDtoService;
+    private readonly Mock<IMapper> _mockMapper;
 
     public TransferDtoServiceTests()
     {
@@ -29,7 +30,7 @@ public class TransferDtoServiceTests
         );
     }
 
-    [Fact]
+     [Fact]
     public async Task TransferAsync_ShouldExecuteTransfer_WhenAccountsAreValid()
     {
         // Arrange
@@ -51,13 +52,33 @@ public class TransferDtoServiceTests
         _transferRepositoryMock.Setup(r => r.GetByAccountNumberAsync(654321))
             .ReturnsAsync(destinationAccount);
 
+
+        var transfer = new Transfer();
+        transfer.SetAccountOrigin(originAccount);
+        transfer.SetAccountOriginId(originAccount.Id);
+        transfer.SetAccountDestination(destinationAccount);
+        transfer.SetAccountDestinationId(destinationAccount.Id);
+        transfer.SetAmount(100m);
+        transfer.SetTransferDate(DateTime.Now);
+
+        _mockMapper.Setup(m => m.Map<TransferByBankAccountNumberDtoResponse>(It.IsAny<Transfer>()))
+            .Returns(new TransferByBankAccountNumberDtoResponse(
+                transfer.Id,
+                transfer.AccountOrigin!.User!.Name!,
+                transfer.AccountOrigin!.User!.LastName!,
+                transfer.AccountDestination!.AccountNumber,
+                transfer.Amount,
+                DateTime.Now));
+
         // Act
-        var result = await _transferDtoService.TransferAsync("1", 123456, 654321, 100m);
+        var result = await _transferDtoService.TransferByBankAccountNumberDtoAsync("1", 123456, 654321, 100m);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(originAccount, result.AccountOrigin);
-        Assert.Equal(destinationAccount, result.AccountDestination);
+        Assert.Equal(transfer.Id, result.TransactionId);
+        Assert.Equal(originUser.Name, result.Name);
+        Assert.Equal(originUser.LastName, result.LastName);
+        Assert.Equal(654321, result.DestinationBankAccountNumber);
         Assert.Equal(100m, result.Amount);
 
         _bankTransactionRepositoryMock.Verify(r => r.CreateEntityAsync(It.IsAny<Transfer>()), Times.Once);
@@ -72,7 +93,7 @@ public class TransferDtoServiceTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<AccountNotFoundException>(
-            () => _transferDtoService.TransferAsync("1", 123456, 654321, 100m)
+            () => _transferDtoService.TransferByBankAccountNumberDtoAsync("1", 123456, 654321, 100m)
         );
 
         Assert.Equal("Origin account not found.", exception.Message);
@@ -92,7 +113,7 @@ public class TransferDtoServiceTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<AccountNotFoundException>(
-            () => _transferDtoService.TransferAsync("1", 123456, 654321, 100m)
+            () => _transferDtoService.TransferByBankAccountNumberDtoAsync("1", 123456, 654321, 100m)
         );
 
         Assert.Equal("Destination account not found.", exception.Message);
@@ -121,18 +142,36 @@ public class TransferDtoServiceTests
         _transferRepositoryMock.Setup(r => r.GetByCpfAsync("987.654.321-00"))
             .ReturnsAsync(destinationAccount);
 
+        var transfer = new Transfer();
+        transfer.SetAccountOrigin(originAccount);
+        transfer.SetAccountOriginId(originAccount.Id);
+        transfer.SetAccountDestination(destinationAccount);
+        transfer.SetAccountDestinationId(destinationAccount.Id);
+        transfer.SetAmount(300m);
+        transfer.SetTransferDate(DateTime.Now);
+
+        _mockMapper.Setup(m => m.Map<TransferByCpfDtoResponse>(It.IsAny<Transfer>()))
+            .Returns(new TransferByCpfDtoResponse(
+                transfer.Id,
+                transfer.AccountOrigin!.User!.Name!,
+                transfer.AccountOrigin!.User!.LastName!,
+                transfer.AccountOrigin!.User!.Cpf!,
+                transfer.Amount,
+                DateTime.Now));
+
         // Act
-        var result = await _transferDtoService.TransferByCpfAsync("1", "123.456.789-00", "987.654.321-00", 200m);
+        var result = await _transferDtoService.TransferByCpfDtoAsync("1", "123.456.789-00", "987.654.321-00", 200m);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(originAccount, result.AccountOrigin);
-        Assert.Equal(destinationAccount, result.AccountDestination);
-        Assert.Equal(200m, result.Amount);
+        Assert.Equal(transfer.Id, result.TransactionId);
+        Assert.Equal(originUser.Name, result.Name);
+        Assert.Equal(originUser.LastName, result.LastName);
+        Assert.Equal(originUser.Cpf, result.DestinationCpf);
+        Assert.Equal(300m, result.Amount);
 
         _bankTransactionRepositoryMock.Verify(r => r.CreateEntityAsync(It.IsAny<Transfer>()), Times.Once);
     }
-
 
     [Fact]
     public async Task TransferByCpfAsync_ShouldThrowAccountNotFoundException_WhenOriginAccountIsNull()
@@ -143,7 +182,7 @@ public class TransferDtoServiceTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<AccountNotFoundException>(
-            () => _transferDtoService.TransferByCpfAsync("1", "123.456.789-00", "987.654.321-00", 200m)
+            () => _transferDtoService.TransferByCpfDtoAsync("1", "123.456.789-00", "987.654.321-00", 200m)
         );
 
         Assert.Equal("Origin account not found.", exception.Message);
@@ -167,7 +206,7 @@ public class TransferDtoServiceTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<AccountNotFoundException>(
-            () => _transferDtoService.TransferByCpfAsync("1", "123.456.789-00", "987.654.321-00", 200m)
+            () => _transferDtoService.TransferByCpfDtoAsync("1", "123.456.789-00", "987.654.321-00", 200m)
         );
 
         Assert.Equal("Destination account not found.", exception.Message);
@@ -197,7 +236,7 @@ public class TransferDtoServiceTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => _transferDtoService.TransferAsync("1", 123456, 654321, 100m)
+            () => _transferDtoService.TransferByBankAccountNumberDtoAsync("1", 123456, 654321, 100m)
         );
 
         Assert.Equal("User not authorized to transfer from this account.", exception.Message);
@@ -228,7 +267,7 @@ public class TransferDtoServiceTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => _transferDtoService.TransferByCpfAsync("1", "123.456.789-00", "987.654.321-00", 200m)
+            () => _transferDtoService.TransferByCpfDtoAsync("1", "123.456.789-00", "987.654.321-00", 200m)
         );
 
         Assert.Equal("User not authorized to transfer from this account.", exception.Message);

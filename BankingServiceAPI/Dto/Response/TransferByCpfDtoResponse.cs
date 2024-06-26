@@ -1,6 +1,6 @@
 ﻿namespace BankingServiceAPI.Dto.Response;
 
-public record TransferDtoResponse(
+public record TransferByCpfDtoResponse(
     int TransactionId,
     string Name,
     string LastName,

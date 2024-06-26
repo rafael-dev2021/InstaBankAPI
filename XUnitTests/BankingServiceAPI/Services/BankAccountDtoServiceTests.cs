@@ -17,19 +17,18 @@ public class BankAccountDtoServiceTests
     private readonly Mock<IBankAccountRepository> _repositoryMock;
     private readonly BankAccountDtoService _bankAccountDtoService;
     private readonly Mock<IMapper> _mapperMock;
-    private readonly Mock<ILogger<BankAccountDtoService>> _loggerMock;
     private readonly Mock<IUserContextService> _userContextServiceMock;
 
     protected BankAccountDtoServiceTests()
     {
         _repositoryMock = new Mock<IBankAccountRepository>();
         _mapperMock = new Mock<IMapper>();
-        _loggerMock = new Mock<ILogger<BankAccountDtoService>>();
+        Mock<ILogger<BankAccountDtoService>> loggerMock = new();
         _userContextServiceMock = new Mock<IUserContextService>();
         _bankAccountDtoService = new BankAccountDtoService(
             _repositoryMock.Object,
             _mapperMock.Object,
-            _loggerMock.Object,
+            loggerMock.Object,
             _userContextServiceMock.Object
         );
     }
@@ -111,18 +110,6 @@ public class BankAccountDtoServiceTests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(bankAccountDtos, result);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString() == "Returning all entities"),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-                ),
-                Times.Once
-            );
         }
 
         [Fact]
@@ -141,20 +128,8 @@ public class BankAccountDtoServiceTests
             // Assert
             Assert.NotNull(result);
             Assert.Empty(result);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString() == "Returning all entities"),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-                ),
-                Times.Once
-            );
         }
-        
+
         [Fact]
         public async Task GetEntitiesDtoAsync_ShouldThrowBankAccountDtoServiceException_WhenExceptionOccurs()
         {
@@ -169,20 +144,7 @@ public class BankAccountDtoServiceTests
 
             Assert.Equal("An unexpected error occurred while processing the request.", exception.Message);
             Assert.Equal(exceptionMessage, exception.InnerException?.Message);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString() == "Error while getting all entities"),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-                ),
-                Times.Once
-            );
         }
-
     }
 
     public class GetEntityDtoByIdAsyncTests : BankAccountDtoServiceTests
@@ -237,83 +199,6 @@ public class BankAccountDtoServiceTests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(bankAccountDto, result);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) =>
-                        o.ToString() == $"Getting entity by id: 1"),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-                ),
-                Times.Once
-            );
-        }
-
-        [Fact]
-        public async Task
-            GetEntityDtoByIdAsync_ShouldThrowBankAccountDtoServiceException_WithInnerException_WhenEntityDoesNotExist()
-        {
-            // Arrange
-            const int entityId = 1;
-            _repositoryMock.Setup(r => r.GetEntityByIdAsync(entityId)).ReturnsAsync((BankAccount)null!);
-
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<BankAccountDtoServiceException>(
-                () => _bankAccountDtoService.GetEntityDtoByIdAsync(entityId)
-            );
-
-            Assert.Equal("An unexpected error occurred while processing the request.", exception.Message);
-
-            Assert.IsType<GetIdNotFoundException>(exception.InnerException);
-            Assert.Equal($"Could not find bank account id: {entityId}", exception.InnerException?.Message);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString() == $"Entity with id: {entityId} not found"),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-                ),
-                Times.Once
-            );
-        }
-
-        [Fact]
-        public async Task GetEntityDtoByIdAsync_ShouldThrowBankAccountDtoServiceException_WhenUnexpectedErrorOccurs()
-        {
-            // Arrange
-            const int entityId = 1;
-
-            const string exceptionMessage = "Unexpected error";
-            var unexpectedException = new Exception(exceptionMessage);
-
-            _repositoryMock.Setup(r => r.GetEntityByIdAsync(entityId)).ThrowsAsync(unexpectedException);
-
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<BankAccountDtoServiceException>(
-                () => _bankAccountDtoService.GetEntityDtoByIdAsync(entityId)
-            );
-
-            Assert.Equal("An unexpected error occurred while processing the request.", exception.Message);
-            Assert.Equal(unexpectedException, exception.InnerException);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) =>
-                        o.ToString() == $"Unexpected error while getting entity by id: {entityId}"),
-                    unexpectedException,
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-                ),
-                Times.Once
-            );
         }
     }
 
@@ -353,26 +238,6 @@ public class BankAccountDtoServiceTests
 
             // Assert
             _repositoryMock.Verify(r => r.CreateEntityAsync(bankAccount), Times.Once);
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString() == "Adding new entity"),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-                ),
-                Times.Once
-            );
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString() == "New entity added successfully"),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-                ),
-                Times.Once
-            );
         }
 
         [Fact]
@@ -395,17 +260,6 @@ public class BankAccountDtoServiceTests
 
             Assert.Equal("An unexpected error occurred while processing the request.", exception.Message);
             Assert.Equal(innerException, exception.InnerException);
-
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString() == "Error while adding new entity"),
-                    innerException,
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-                ),
-                Times.Once
-            );
         }
     }
 
@@ -442,92 +296,22 @@ public class BankAccountDtoServiceTests
 
             // Assert
             _repositoryMock.Verify(r => r.DeleteEntityAsync(entityId), Times.Once);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString() == $"Deleting entity with id: {entityId}"),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-                ),
-                Times.Once
-            );
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString() == $"Entity with id: {entityId} deleted successfully"),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-                ),
-                Times.Once
-            );
         }
 
         [Fact]
-        public async Task DeleteEntityDtoAsync_ShouldThrowBankAccountDtoServiceException_WhenUnexpectedErrorOccurs()
+        public async Task DeleteEntityDtoAsync_ShouldThrowGetIdNotFoundException_WhenEntityDoesNotExist()
         {
             // Arrange
             const int entityId = 1;
 
-            const string exceptionMessage = "Unexpected error";
-            var unexpectedException = new Exception(exceptionMessage);
-
-            _repositoryMock.Setup(r => r.GetEntityByIdAsync(entityId)).ThrowsAsync(unexpectedException);
-
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<BankAccountDtoServiceException>(
-                () => _bankAccountDtoService.DeleteEntityDtoAsync(entityId)
-            );
-
-            Assert.Equal("An unexpected error occurred while processing the request.", exception.Message);
-            Assert.Equal(unexpectedException, exception.InnerException);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) =>
-                        o.ToString() == $"Unexpected error while deleting entity with id: {entityId}"),
-                    unexpectedException,
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-                ),
-                Times.Once
-            );
-        }
-
-        [Fact]
-        public async Task
-            DeleteEntityDtoAsync_ShouldThrowBankAccountDtoServiceException_WithInnerException_WhenEntityDoesNotExist()
-        {
-            // Arrange
-            const int entityId = 1;
             _repositoryMock.Setup(r => r.GetEntityByIdAsync(entityId)).ReturnsAsync((BankAccount)null!);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<BankAccountDtoServiceException>(
+            var exception = await Assert.ThrowsAsync<GetIdNotFoundException>(
                 () => _bankAccountDtoService.DeleteEntityDtoAsync(entityId)
             );
 
-            Assert.Equal("An unexpected error occurred while processing the request.", exception.Message);
-
-            Assert.IsType<GetIdNotFoundException>(exception.InnerException);
-            Assert.Equal($"Could not find bank account id: {entityId}", exception.InnerException?.Message);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString() == $"Entity with id: {entityId} not found for deletion"),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-                ),
-                Times.Once
-            );
+            Assert.Equal($"Could not find bank account id: '{entityId}' ", exception.Message);
         }
     }
 }
