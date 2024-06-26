@@ -6,8 +6,10 @@ public static class MappingProfileDependencyInjection
 {
     public static void AddMappingProfileDependencyInjection(this IServiceCollection service)
     {
-        service.AddAutoMapper(typeof(MappingTheUserProfile));
-        service.AddAutoMapper(typeof(MappingTheBankAccountProfile));
+        service.AddAutoMapper(typeof(MappingTheUserProfile))
+            .AddAutoMapper(typeof(MappingTheBankAccountProfile))
+            .AddAutoMapper(typeof(MappingTheTransferProfile))
+            .AddAutoMapper(typeof(MappingTheWithdrawProfile))
+            .AddAutoMapper(typeof(MappingTheProfileDeposit));
     }
-
 }
