@@ -1,6 +1,7 @@
 ﻿using BankingServiceAPI.Dto.Request;
 using BankingServiceAPI.Dto.Response;
 using BankingServiceAPI.Endpoints.Strategies;
+using BankingServiceAPI.Exceptions;
 using BankingServiceAPI.Services.Interfaces;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
@@ -28,8 +29,11 @@ public static class BankAccountEndpoint
         MapPostEndpoint<BankAccountDtoRequest>(
             app,
             "/v1/bank/create",
-            async (service, request, context) => await service.AddEntityDtoAsync(request, context),
-            StatusCodes.Status201Created,
+            async (service, request, context) =>
+            {
+                var response = await service.AddEntityDtoAsync(request, context);
+                return Results.Created($"/v1/bank/accounts/{response.Id}", response);
+            },
             requireAuthentication: true
         );
 
@@ -93,9 +97,9 @@ public static class BankAccountEndpoint
                 var result = await handler(service, id);
                 return Results.Ok(result);
             }
-            catch (UnauthorizedAccessException ex)
+            catch (GetIdNotFoundException ex)
             {
-                return AuthenticationRules.HandleUnauthorizedAccessException(ex);
+                return Results.NotFound(new { message = ex.Message });
             }
         });
     }
@@ -103,8 +107,7 @@ public static class BankAccountEndpoint
     private static void MapPostEndpoint<T>(
         WebApplication app,
         string route,
-        Func<IBankAccountDtoService, T, HttpContext, Task> handler,
-        int expectedStatusCode = StatusCodes.Status200OK,
+        Func<IBankAccountDtoService, T, HttpContext, Task<IResult>> handler,
         bool requireAuthentication = true) where T : class
     {
         app.MapPost(route, async (
@@ -126,8 +129,8 @@ public static class BankAccountEndpoint
                     return validationResult;
                 }
 
-                await handler(service, request, context);
-                return Results.StatusCode(expectedStatusCode);
+                var result = await handler(service, request, context);
+                return result;
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -159,9 +162,9 @@ public static class BankAccountEndpoint
                 await handler(service, id);
                 return Results.Ok();
             }
-            catch (UnauthorizedAccessException ex)
+            catch (GetIdNotFoundException ex)
             {
-                return AuthenticationRules.HandleUnauthorizedAccessException(ex);
+                return Results.NotFound(new { message = ex.Message });
             }
         });
     }
