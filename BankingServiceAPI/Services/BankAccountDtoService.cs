@@ -50,27 +50,41 @@ public class BankAccountDtoService(
         }
     }
 
-    public async Task AddEntityDtoAsync(BankAccountDtoRequest bankAccountDtoRequest,
+    public async Task<BankAccountDtoResponse> AddEntityDtoAsync(BankAccountDtoRequest bankAccountDtoRequest,
         HttpContext httpContext)
     {
         try
         {
-            logger.LogInformation("Adding new entity");
             var user = await userContextService.GetUserFromHttpContextAsync(httpContext);
 
             var bankAccount = mapper.Map<BankAccount>(bankAccountDtoRequest);
             bankAccount.SetUser(user);
 
             await repository.CreateEntityAsync(bankAccount);
-            logger.LogInformation("New entity added successfully");
+
+            return new BankAccountDtoResponse(
+                bankAccount.Id,
+                bankAccount.AccountNumber,
+                bankAccount.Balance,
+                bankAccount.Agency,
+                bankAccount.AccountType.ToString(),
+                new UserDtoResponse(
+                    user.Id,
+                    user.Name,
+                    user.LastName,
+                    user.Cpf,
+                    user.Email,
+                    user.PhoneNumber,
+                    user.Role
+                )
+            );
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error while adding new entity");
             throw new BankAccountDtoServiceException(Message, ex);
         }
     }
-    
+
     public async Task DeleteEntityDtoAsync(int? id)
     {
         try
