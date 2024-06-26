@@ -2,8 +2,7 @@
 
 namespace BankingServiceAPI.Repositories.Interfaces;
 
-public interface ITransferRepository
+public interface ITransferRepository : IAccountNumberRepository
 {
-    Task<BankAccount?> GetByAccountNumberAsync(int accountNumber);
     Task<BankAccount?> GetByCpfAsync(string cpf);
 }
