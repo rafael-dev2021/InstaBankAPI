@@ -7,6 +7,6 @@ public interface IBankAccountDtoService
 {
     Task<IEnumerable<BankAccountDtoResponse>> GetEntitiesDtoAsync();
     Task<BankAccountDtoResponse?> GetEntityDtoByIdAsync(int? id);
-    Task AddEntityDtoAsync(BankAccountDtoRequest bankAccountDtoRequest, HttpContext httpContext);
+    Task<BankAccountDtoResponse> AddEntityDtoAsync(BankAccountDtoRequest bankAccountDtoRequest, HttpContext httpContext);
     Task DeleteEntityDtoAsync(int? id);
 }

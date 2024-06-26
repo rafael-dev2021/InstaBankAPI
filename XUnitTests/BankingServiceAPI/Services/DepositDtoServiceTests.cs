@@ -7,19 +7,19 @@ using Moq;
 
 namespace XUnitTests.BankingServiceAPI.Services;
 
-public class DepositServiceTests
+public class DepositDtoServiceTests
 {
     private readonly Mock<IDepositRepository> _depositRepositoryMock;
     private readonly Mock<IBankTransactionRepository> _bankTransactionRepositoryMock;
-    private readonly Mock<ILogger<DepositService>> _loggerMock;
-    private readonly DepositService _depositService;
+    private readonly Mock<ILogger<DepositDtoService>> _loggerMock;
+    private readonly DepositDtoService _depositDtoService;
 
-    public DepositServiceTests()
+    public DepositDtoServiceTests()
     {
         _depositRepositoryMock = new Mock<IDepositRepository>();
         _bankTransactionRepositoryMock = new Mock<IBankTransactionRepository>();
-        _loggerMock = new Mock<ILogger<DepositService>>();
-        _depositService = new DepositService(
+        _loggerMock = new Mock<ILogger<DepositDtoService>>();
+        _depositDtoService = new DepositDtoService(
             _depositRepositoryMock.Object,
             _bankTransactionRepositoryMock.Object,
             _loggerMock.Object
@@ -43,7 +43,7 @@ public class DepositServiceTests
             .ReturnsAsync(account);
 
         // Act
-        var result = await _depositService.DepositAsync("1", 123456, 50m);
+        var result = await _depositDtoService.DepositAsync("1", 123456, 50m);
 
         // Assert
         Assert.NotNull(result);
@@ -71,7 +71,7 @@ public class DepositServiceTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<AccountNotFoundException>(
-            () => _depositService.DepositAsync("1", 123456, 50m)
+            () => _depositDtoService.DepositAsync("1", 123456, 50m)
         );
 
         Assert.Equal("Account not found.", exception.Message);
@@ -103,7 +103,7 @@ public class DepositServiceTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => _depositService.DepositAsync("1", 123456, 50m)
+            () => _depositDtoService.DepositAsync("1", 123456, 50m)
         );
 
         Assert.Equal("User not authorized to deposit to this account.", exception.Message);

@@ -7,19 +7,19 @@ using Moq;
 
 namespace XUnitTests.BankingServiceAPI.Services;
 
-public class WithdrawServiceTests
+public class WithdrawDtoServiceTests
 {
     private readonly Mock<IWithdrawRepository> _withdrawRepositoryMock;
     private readonly Mock<IBankTransactionRepository> _bankTransactionRepositoryMock;
-    private readonly Mock<ILogger<WithdrawService>> _loggerMock;
-    private readonly WithdrawService _withdrawService;
+    private readonly Mock<ILogger<WithdrawDtoService>> _loggerMock;
+    private readonly WithdrawDtoService _withdrawDtoService;
 
-    public WithdrawServiceTests()
+    public WithdrawDtoServiceTests()
     {
         _withdrawRepositoryMock = new Mock<IWithdrawRepository>();
         _bankTransactionRepositoryMock = new Mock<IBankTransactionRepository>();
-        _loggerMock = new Mock<ILogger<WithdrawService>>();
-        _withdrawService = new WithdrawService(
+        _loggerMock = new Mock<ILogger<WithdrawDtoService>>();
+        _withdrawDtoService = new WithdrawDtoService(
             _withdrawRepositoryMock.Object,
             _bankTransactionRepositoryMock.Object,
             _loggerMock.Object
@@ -45,7 +45,7 @@ public class WithdrawServiceTests
             .ReturnsAsync(account);
 
         // Act
-        var result = await _withdrawService.WithdrawAsync("1", 123456, 100m);
+        var result = await _withdrawDtoService.WithdrawAsync("1", 123456, 100m);
 
         // Assert
         Assert.NotNull(result);
@@ -63,7 +63,7 @@ public class WithdrawServiceTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<AccountNotFoundException>(
-            () => _withdrawService.WithdrawAsync("1", 123456, 100m)
+            () => _withdrawDtoService.WithdrawAsync("1", 123456, 100m)
         );
 
         Assert.Equal("Account not found.", exception.Message);
@@ -98,7 +98,7 @@ public class WithdrawServiceTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => _withdrawService.WithdrawAsync("1", 123456, 100m)
+            () => _withdrawDtoService.WithdrawAsync("1", 123456, 100m)
         );
 
         Assert.Equal("You are not authorized to perform this transaction.", exception.Message);
@@ -134,7 +134,7 @@ public class WithdrawServiceTests
             .ReturnsAsync(account);
 
         // Act
-        var result = await _withdrawService.WithdrawAsync("1", 123456, 100m);
+        var result = await _withdrawDtoService.WithdrawAsync("1", 123456, 100m);
 
         // Assert
         Assert.NotNull(result);

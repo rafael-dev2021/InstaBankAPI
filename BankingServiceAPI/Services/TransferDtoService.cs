@@ -1,16 +1,20 @@
-﻿using BankingServiceAPI.Exceptions;
+﻿using AutoMapper;
+using BankingServiceAPI.Dto.Response;
+using BankingServiceAPI.Exceptions;
 using BankingServiceAPI.Models;
 using BankingServiceAPI.Repositories.Interfaces;
 using BankingServiceAPI.Services.Interfaces;
 
 namespace BankingServiceAPI.Services;
 
-public class TransferService(
+public class TransferDtoService(
     ITransferRepository transferRepository,
     IBankTransactionRepository bankTransactionRepository,
-    ILogger<TransferService> logger) : ITransferService
+    ILogger<TransferDtoService> logger,
+    IMapper mapper) : ITransferDtoService
 {
-    public async Task<Transfer> TransferAsync(string userId, int originAccountNumber, int destinationAccountNumber,
+    public async Task<TransferByBankAccountNumberDtoResponse> TransferByBankAccountNumberAsync(string userId,
+        int originAccountNumber, int destinationAccountNumber,
         decimal amount)
     {
         logger.LogInformation(
@@ -20,10 +24,12 @@ public class TransferService(
         var originAccount = await transferRepository.GetByAccountNumberAsync(originAccountNumber);
         var destinationAccount = await transferRepository.GetByAccountNumberAsync(destinationAccountNumber);
 
-        return await ExecuteTransferAsync(userId, originAccount, destinationAccount, amount);
+        var transfer = await ExecuteTransferAsync(userId, originAccount, destinationAccount, amount);
+        
+        return mapper.Map<TransferByBankAccountNumberDtoResponse>(transfer);
     }
 
-    public async Task<Transfer> TransferByCpfAsync(string userId, string? originCpf, string? destinationCpf,
+    public async Task<TransferDtoResponse> TransferByCpfAsync(string userId, string? originCpf, string? destinationCpf,
         decimal amount)
     {
         logger.LogInformation(
@@ -33,7 +39,9 @@ public class TransferService(
         var originAccount = await transferRepository.GetByCpfAsync(originCpf!);
         var destinationAccount = await transferRepository.GetByCpfAsync(destinationCpf!);
 
-        return await ExecuteTransferAsync(userId, originAccount, destinationAccount, amount);
+        var transfer = await ExecuteTransferAsync(userId, originAccount, destinationAccount, amount);
+
+        return mapper.Map<TransferDtoResponse>(transfer);
     }
 
     private async Task<Transfer> ExecuteTransferAsync(string? userId, BankAccount? originAccount,
