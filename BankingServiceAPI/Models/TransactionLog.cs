@@ -2,8 +2,13 @@
 
 public class TransactionLog
 {
-    public int TransactionId { get; set; }
-    public BankTransaction? BankTransaction { get; set; }
-    public int BankTransactionId { get; set; }
-    public DateTime TimeDate { get; set; } = DateTime.Now;
+    public int Id { get; init; }
+    public int BankTransactionId { get; init; }
+    public BankTransaction? BankTransaction { get; init; }
+    public string? TransactionType { get; init; } 
+    public string? Description { get; init; }
+    public decimal Amount { get; init; } 
+    public int AccountOriginId { get; init; } 
+    public int? AccountDestinationId { get; init; } 
+    public DateTime TransactionDate { get; init; } = DateTime.Now; 
 }
