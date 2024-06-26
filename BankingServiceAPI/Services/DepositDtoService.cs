@@ -14,7 +14,7 @@ public class DepositDtoService(
     IMapper mapper)
     : IDepositDtoService
 {
-    public async Task<DepositDtoResponse> DepositAsync(string userId, int accountNumber, decimal amount)
+    public async Task<DepositDtoResponse> DepositDtoAsync(string userId, int accountNumber, decimal amount)
     {
         logger.LogInformation("Attempting to deposit {Amount} to account number {AccountNumber} for user {UserId}",
             amount, accountNumber, userId);
