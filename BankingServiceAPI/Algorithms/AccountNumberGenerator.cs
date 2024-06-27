@@ -1,28 +1,33 @@
 ﻿using BankingServiceAPI.Algorithms.Interfaces;
 using BankingServiceAPI.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace BankingServiceAPI.Algorithms;
 
-public class AccountNumberGenerator(AppDbContext context) : IAccountNumberGenerator
+public class AccountNumberGenerator(AppDbContext appDbContext) : IAccountNumberGenerator
 {
     private static readonly Random Random = new();
 
-    public int GenerateAccountNumber()
+    public async Task<int> GenerateAgencyNumberAsync()
     {
-        return GenerateAccountNumberRecursive();
+        return await Task.FromResult(Random.Next(1000, 9999));
     }
 
-    public int GenerateAgencyNumber()
+    public async Task<int> GenerateAccountNumberAsync()
     {
-        return Random.Next(1000, 9999);
+        return await GenerateUniqueAccountNumberAsync();
     }
 
-    private int GenerateAccountNumberRecursive()
+    private async Task<int> GenerateUniqueAccountNumberAsync()
     {
-        var accountNumber = Random.Next(10000, 999999);
+        while (true)
+        {
+            var accountNumber = Random.Next(10000, 999999);
 
-        return context.BankAccounts.Any(x => x.AccountNumber == accountNumber)
-            ? GenerateAccountNumberRecursive()
-            : accountNumber;
+            var exists = await appDbContext.BankAccounts.AnyAsync(x => x.AccountNumber == accountNumber);
+
+            if (exists) continue;
+            return accountNumber;
+        }
     }
 }

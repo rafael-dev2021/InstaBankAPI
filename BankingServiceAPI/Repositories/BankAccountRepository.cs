@@ -24,8 +24,8 @@ public class BankAccountRepository(
 
     public async Task<BankAccount> CreateEntityAsync(BankAccount entity)
     {
-        entity.SetAccountNumber(accountNumberGenerator.GenerateAccountNumber());
-        entity.SetAgency(accountNumberGenerator.GenerateAgencyNumber());
+        entity.SetAccountNumber(await accountNumberGenerator.GenerateAccountNumberAsync());
+        entity.SetAgency(await accountNumberGenerator.GenerateAgencyNumberAsync());
 
         await context.BankAccounts.AddAsync(entity);
         await context.SaveChangesAsync();
@@ -36,7 +36,7 @@ public class BankAccountRepository(
     {
         var account = await GetEntityByIdAsync(id);
         if (account == null)
-            throw new GetIdNotFoundException($"Id: {id} not found."); 
+            throw new GetIdNotFoundException($"Id: {id} not found.");
 
         context.BankAccounts.Remove(account);
         await context.SaveChangesAsync();

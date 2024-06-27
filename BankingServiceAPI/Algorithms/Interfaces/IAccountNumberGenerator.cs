@@ -2,6 +2,6 @@
 
 public interface IAccountNumberGenerator
 {
-    int GenerateAccountNumber();
-    int GenerateAgencyNumber();
+    Task<int> GenerateAccountNumberAsync();
+    Task<int> GenerateAgencyNumberAsync();
 }
