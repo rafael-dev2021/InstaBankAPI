@@ -12,5 +12,6 @@ public interface IAuthenticateService
     Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest request);
     Task LogoutAsync();
     Task<bool> ForgotPasswordAsync(string email, string newPassword);
-    Task<TokenDtoResponse> RefreshTokenAsync(RefreshTokenDtoRequest refreshTokenDtoRequest); // Adicione esta linha
+    Task<TokenDtoResponse> RefreshTokenAsync(RefreshTokenDtoRequest refreshTokenDtoRequest); 
+    Task<bool> RevokeTokenAsync(string token);
 }

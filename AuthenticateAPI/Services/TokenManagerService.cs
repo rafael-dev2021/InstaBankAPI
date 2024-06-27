@@ -29,7 +29,7 @@ public class TokenManagerService(
 
         return new TokenDtoResponse(accessTokenToken.TokenValue!, refreshTokenToken.TokenValue!);
     }
- 
+
     public void RevokeAllUserTokens(User user)
     {
         var validUserTokens = tokenRepository.FindAllValidTokenByUser(user.Id).Result;
@@ -43,6 +43,16 @@ public class TokenManagerService(
         tokenRepository.SaveAllTokensAsync(validUserTokens).Wait();
 
         logger.LogInformation("All tokens revoked for user {UserId}", user.Id);
+    }
+
+    public async Task<bool> RevokeTokenAsync(string token)
+    {
+        var dbToken = await tokenRepository.FindByTokenValue(token);
+        if (dbToken == null) return false;
+
+        dbToken.SetTokenRevoked(true);
+        await tokenRepository.SaveTokenAsync(dbToken);
+        return true;
     }
 
     public async Task ClearTokensAsync(string userId)
