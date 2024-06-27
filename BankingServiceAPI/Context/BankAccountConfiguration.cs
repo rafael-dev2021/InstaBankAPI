@@ -13,6 +13,9 @@ public class BankAccountConfiguration : IEntityTypeConfiguration<BankAccount>
         builder.Property(e => e.AccountNumber)
             .HasMaxLength(6)
             .IsRequired();
+        
+        builder.HasIndex(e => e.AccountNumber)
+            .IsUnique();
 
         builder.Property(e => e.Agency)
             .HasMaxLength(4)
