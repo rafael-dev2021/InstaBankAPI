@@ -10,6 +10,8 @@ builder.Services.AddOpenApiExtensions();
 builder.Services.AddDependencyInjectionJwt();
 builder.Services.AddAuthorization();
 
+builder.Services.AddHttpClient<TokenValidationMiddleware>();
+
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
@@ -30,6 +32,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<TokenValidationMiddleware>();
 app.UseMiddleware<ErrorHandlerMiddleware>();
 
 app.UseHttpsRedirection();
