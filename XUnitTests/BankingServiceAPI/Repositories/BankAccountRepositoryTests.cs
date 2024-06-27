@@ -126,8 +126,11 @@ public class BankAccountRepositoryTests : IDisposable
         bankAccount.SetAccountType(AccountType.Savings);
         bankAccount.SetUser(user);
 
-        _accountNumberGeneratorMock.Setup(x => x.GenerateAccountNumber()).Returns(123456);
-        _accountNumberGeneratorMock.Setup(x => x.GenerateAgencyNumber()).Returns(456);
+        _accountNumberGeneratorMock.Setup(x => 
+            x.GenerateAccountNumberAsync()).Returns(Task.FromResult(123456));
+        
+        _accountNumberGeneratorMock.Setup(x =>
+            x.GenerateAgencyNumberAsync()).Returns(Task.FromResult(456));
 
         // Act
         var result = await _bankAccountRepository.CreateEntityAsync(bankAccount);
