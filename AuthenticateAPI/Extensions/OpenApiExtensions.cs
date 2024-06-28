@@ -8,6 +8,7 @@ public static class OpenApiExtensions
     public static void AddOpenApiExtensions(this IServiceCollection services)
     {
         Env.Load();
+        
         var openApiUrl = Environment.GetEnvironmentVariable("OPENAPI_URL");
         const string bearer = "Bearer";
 
@@ -40,15 +41,18 @@ public static class OpenApiExtensions
                     Url = new Uri(openApiUrl!)
                 }
             });
-
-            c.AddSecurityDefinition(bearer, new OpenApiSecurityScheme
+            
+            var securityScheme = new OpenApiSecurityScheme
             {
-                Description = $"'{bearer}' [space] your token",
                 Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
                 In = ParameterLocation.Header,
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = bearer
-            });
+                Description = "JWT Authorization header using the Bearer scheme."
+            };
+            
+            c.AddSecurityDefinition(bearer, securityScheme);
 
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
@@ -73,7 +77,7 @@ public static class OpenApiExtensions
             .AddPolicy("ApiScope", policy =>
             {
                 policy.RequireAuthenticatedUser();
-                policy.RequireClaim("scope", "AuthenticateAPI");
+                policy.RequireClaim("scope", "InstaBankAPI");
             });
     }
 }

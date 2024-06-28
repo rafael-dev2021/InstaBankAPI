@@ -5,7 +5,9 @@ VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthenticateAPI", "AuthenticateAPI\AuthenticateAPI.csproj", "{914E5C3A-0F2F-41B7-B1EC-585D7164A61F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XUnitTests", "XUnitTests\XUnitTests.csproj", "{AEDF3B1B-0D7D-4AF5-A239-E6B1B5E85ACC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XUnitTests", "XUnitTests\XUnitTests.csproj", "{AEDF3B1B-0D7D-4AF5-A239-E6B1B5E85ACC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BankingServiceAPI", "BankingServiceAPI\BankingServiceAPI.csproj", "{A304AEE3-03CA-4F2E-ABB6-E09BF2520BC1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{AEDF3B1B-0D7D-4AF5-A239-E6B1B5E85ACC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AEDF3B1B-0D7D-4AF5-A239-E6B1B5E85ACC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AEDF3B1B-0D7D-4AF5-A239-E6B1B5E85ACC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A304AEE3-03CA-4F2E-ABB6-E09BF2520BC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A304AEE3-03CA-4F2E-ABB6-E09BF2520BC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A304AEE3-03CA-4F2E-ABB6-E09BF2520BC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A304AEE3-03CA-4F2E-ABB6-E09BF2520BC1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -27,6 +27,7 @@ public class TokenServiceTests
 
         _loggerMock = new Mock<ILogger<TokenService>>();
     }
+    
 
     public class GenerateTokenTests : TokenServiceTests
     {
@@ -42,6 +43,9 @@ public class TokenServiceTests
                 Email = "test@example.com",
             };
             user.SetName("Test User");
+            user.SetLastName("Test User");
+            user.SetCpf("123.456.789-10");
+            user.SetPhoneNumber("+5540028922");
             user.SetRole("user");
 
             // Act
@@ -64,9 +68,14 @@ public class TokenServiceTests
             Assert.NotNull(validatedToken);
             var jwtToken = validatedToken as JwtSecurityToken;
             Assert.NotNull(jwtToken);
-            Assert.Equal("test@example.com", principal.FindFirst(ClaimTypes.Name)?.Value);
-            Assert.Equal("Test User", principal.FindFirst("Name")?.Value);
+            
             Assert.Equal("123", principal.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            Assert.Equal("test@example.com", principal.FindFirst(ClaimTypes.Name)?.Value);
+            Assert.Equal("Test User", principal.FindFirst(ClaimTypes.GivenName)?.Value);
+            Assert.Equal("Test User", principal.FindFirst(ClaimTypes.Surname)?.Value);
+            Assert.Equal("123.456.789-10", principal.FindFirst("Cpf")?.Value);
+            Assert.Equal("+5540028922", principal.FindFirst("PhoneNumber")?.Value);
+            Assert.Equal("user", principal.FindFirst(ClaimTypes.Role)?.Value);
         }
     }
 
@@ -84,6 +93,9 @@ public class TokenServiceTests
                 Email = "test@example.com",
             };
             user.SetName("Test User");
+            user.SetLastName("Test User");
+            user.SetCpf("123.456.789-10");
+            user.SetPhoneNumber("+5540028922");
             user.SetRole("user");
 
             // Act
@@ -106,9 +118,13 @@ public class TokenServiceTests
             Assert.NotNull(validatedToken);
             var jwtToken = validatedToken as JwtSecurityToken;
             Assert.NotNull(jwtToken);
-            Assert.Equal("test@example.com", principal.FindFirst(ClaimTypes.Name)?.Value);
-            Assert.Equal("Test User", principal.FindFirst("Name")?.Value);
             Assert.Equal("123", principal.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            Assert.Equal("test@example.com", principal.FindFirst(ClaimTypes.Name)?.Value);
+            Assert.Equal("Test User", principal.FindFirst(ClaimTypes.GivenName)?.Value);
+            Assert.Equal("Test User", principal.FindFirst(ClaimTypes.Surname)?.Value);
+            Assert.Equal("123.456.789-10", principal.FindFirst("Cpf")?.Value);
+            Assert.Equal("+5540028922", principal.FindFirst("PhoneNumber")?.Value);
+            Assert.Equal("user", principal.FindFirst(ClaimTypes.Role)?.Value);
         }
     }
 
@@ -126,6 +142,9 @@ public class TokenServiceTests
                 Email = "test@example.com",
             };
             user.SetName("Test User");
+            user.SetLastName("Test User");
+            user.SetCpf("123.456.789-10");
+            user.SetPhoneNumber("+5540028922");
             user.SetRole("user");
 
             // Act
@@ -148,9 +167,13 @@ public class TokenServiceTests
             Assert.NotNull(validatedToken);
             var jwtToken = validatedToken as JwtSecurityToken;
             Assert.NotNull(jwtToken);
-            Assert.Equal("test@example.com", principal.FindFirst(ClaimTypes.Name)?.Value);
-            Assert.Equal("Test User", principal.FindFirst("Name")?.Value);
             Assert.Equal("123", principal.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            Assert.Equal("test@example.com", principal.FindFirst(ClaimTypes.Name)?.Value);
+            Assert.Equal("Test User", principal.FindFirst(ClaimTypes.GivenName)?.Value);
+            Assert.Equal("Test User", principal.FindFirst(ClaimTypes.Surname)?.Value);
+            Assert.Equal("123.456.789-10", principal.FindFirst("Cpf")?.Value);
+            Assert.Equal("+5540028922", principal.FindFirst("PhoneNumber")?.Value);
+            Assert.Equal("user", principal.FindFirst(ClaimTypes.Role)?.Value);
         }
     }
 
@@ -168,6 +191,9 @@ public class TokenServiceTests
                 Email = "test@example.com",
             };
             user.SetName("Test User");
+            user.SetLastName("Test User");
+            user.SetCpf("123.456.789-10");
+            user.SetPhoneNumber("+5540028922");
             user.SetRole("user");
 
             var token = tokenService.GenerateAccessToken(user);
@@ -177,9 +203,13 @@ public class TokenServiceTests
 
             // Assert
             Assert.NotNull(principal);
-            Assert.Equal(user.Email, principal.FindFirst(ClaimTypes.Name)?.Value);
-            Assert.Equal(user.Name, principal.FindFirst("Name")?.Value);
-            Assert.Equal(user.Id, principal.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            Assert.Equal("123", principal.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            Assert.Equal("test@example.com", principal.FindFirst(ClaimTypes.Name)?.Value);
+            Assert.Equal("Test User", principal.FindFirst(ClaimTypes.GivenName)?.Value);
+            Assert.Equal("Test User", principal.FindFirst(ClaimTypes.Surname)?.Value);
+            Assert.Equal("123.456.789-10", principal.FindFirst("Cpf")?.Value);
+            Assert.Equal("+5540028922", principal.FindFirst("PhoneNumber")?.Value);
+            Assert.Equal("user", principal.FindFirst(ClaimTypes.Role)?.Value);
         }
 
         [Fact]

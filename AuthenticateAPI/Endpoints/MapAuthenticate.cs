@@ -80,6 +80,17 @@ public static class MapAuthenticate
             async (service, request) => await service.RefreshTokenAsync(request),
             requireAuthentication: false
         );
+        
+        MapPostEndpoint<string>(
+            app,
+            "/v1/auth/revoke-token",
+            async (service, token) =>
+            {
+                var success = await service.RevokeTokenAsync(token);
+                return Results.Ok(success);
+            },
+            requireAuthentication: true
+        );
     }
 
     public static void MapGetEndpoint<T>(

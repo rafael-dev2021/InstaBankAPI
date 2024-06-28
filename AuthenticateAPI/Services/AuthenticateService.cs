@@ -160,4 +160,7 @@ public class AuthenticateService(
             throw new Exception("Internal server error while processing token refresh request", ex);
         }
     }
+    
+    public async Task<bool> RevokeTokenAsync(string token) =>
+        await tokenManagerService.RevokeTokenAsync(token);
 }

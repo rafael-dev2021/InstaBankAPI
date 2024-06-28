@@ -18,11 +18,14 @@ public class TokenService(JwtSettings jwtSettings, ILogger<TokenService> logger)
         {
             Subject = new ClaimsIdentity(new[]
             {
-                new Claim(ClaimTypes.Name, user.Email!),
-                new Claim("Name", user.Name!),
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Name, user.Email!),
+                new Claim(ClaimTypes.GivenName, user.Name!),
+                new Claim(ClaimTypes.Surname, user.LastName!),
+                new Claim("Cpf", user.Cpf),
+                new Claim("PhoneNumber", user.PhoneNumber!),
                 new Claim(ClaimTypes.Email, user.Email!), 
-                new Claim(ClaimTypes.Role, user.Role!) 
+                new Claim(ClaimTypes.Role, user.Role!),
             }),
             Expires = DateTime.UtcNow.AddMinutes(expirationToken),
             SigningCredentials =

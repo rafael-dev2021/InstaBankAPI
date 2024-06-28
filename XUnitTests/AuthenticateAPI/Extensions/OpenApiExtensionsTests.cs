@@ -90,7 +90,7 @@ public class OpenApiExtensionsTests
         Assert.NotNull(policy);
         Assert.Contains(policy.Requirements.OfType<ClaimsAuthorizationRequirement>(), r =>
             r.ClaimType == "scope" &&
-            r.AllowedValues!.Contains("AuthenticateAPI"));
+            r.AllowedValues!.Contains("InstaBankAPI"));
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public class OpenApiExtensionsTests
         var securityDefinition = swaggerGenOptionsInstance.SwaggerGeneratorOptions.SecuritySchemes;
         Assert.Contains("Bearer", securityDefinition);
         var bearerScheme = securityDefinition["Bearer"];
-        Assert.Equal(SecuritySchemeType.ApiKey, bearerScheme.Type);
+        Assert.Equal(SecuritySchemeType.Http, bearerScheme.Type);
         Assert.Equal("Authorization", bearerScheme.Name);
         Assert.Equal(ParameterLocation.Header, bearerScheme.In);
     }
