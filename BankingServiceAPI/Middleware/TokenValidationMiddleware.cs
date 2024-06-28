@@ -1,11 +1,10 @@
 ﻿using System.Net.Http.Headers;
+using DotNetEnv;
 
 namespace BankingServiceAPI.Middleware;
 
 public class TokenValidationMiddleware(RequestDelegate next, HttpClient httpClient)
 {
-    private const string BaseUrl = "https://localhost:7074";
-
     public async Task InvokeAsync(HttpContext context)
     {
         if (context.Request.Headers.TryGetValue("Authorization", out var token))
@@ -27,7 +26,8 @@ public class TokenValidationMiddleware(RequestDelegate next, HttpClient httpClie
 
     private async Task<bool> IsRevokedTokenValidAsync(string token)
     {
-        const string url = $"{BaseUrl}/v1/auth/revoked-token";
+        var baseUrl = GetBaseUrl();
+        var url = $"{baseUrl}/v1/auth/revoked-token";
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -37,11 +37,20 @@ public class TokenValidationMiddleware(RequestDelegate next, HttpClient httpClie
 
     private async Task<bool> IsExpiredTokenValidAsync(string token)
     {
-        const string url = $"{BaseUrl}/v1/auth/expired-token";
+        var baseUrl = GetBaseUrl();
+        var url = $"{baseUrl}/v1/auth/expired-token";
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var response = await httpClient.SendAsync(request);
         return response.IsSuccessStatusCode;
+    }
+
+    private static string GetBaseUrl()
+    {
+        Env.Load();
+
+        var baseUrl = Environment.GetEnvironmentVariable("BASE_URL");
+        return baseUrl!;
     }
 }

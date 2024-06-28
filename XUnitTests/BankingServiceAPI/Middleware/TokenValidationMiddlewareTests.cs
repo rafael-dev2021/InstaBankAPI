@@ -19,10 +19,14 @@ public class TokenValidationMiddlewareTests
         _testOutputHelper = testOutputHelper;
         _nextMock = new Mock<RequestDelegate>();
         _httpMessageHandlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        
+        Environment.SetEnvironmentVariable("BASE_URL", "https://localhost:7074");
+
         var httpClient = new HttpClient(_httpMessageHandlerMock.Object)
         {
-            BaseAddress = new Uri("https://localhost:7074/")
+            BaseAddress = new Uri(Environment.GetEnvironmentVariable("BASE_URL")!)
         };
+        
         _middleware = new TokenValidationMiddleware(_nextMock.Object, httpClient);
     }
 
