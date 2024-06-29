@@ -13,5 +13,6 @@ public interface IAuthenticateService
     Task LogoutAsync();
     Task<bool> ForgotPasswordAsync(string email, string newPassword);
     Task<TokenDtoResponse> RefreshTokenAsync(RefreshTokenDtoRequest refreshTokenDtoRequest); 
-    Task<bool> RevokeTokenAsync(string token);
+    Task<bool> RevokedTokenAsync(string token);
+    Task<bool> ExpiredTokenAsync(string token);
 }
