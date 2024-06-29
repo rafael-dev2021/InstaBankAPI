@@ -86,7 +86,18 @@ public static class MapAuthenticate
             "/v1/auth/revoke-token",
             async (service, token) =>
             {
-                var success = await service.RevokeTokenAsync(token);
+                var success = await service.RevokedTokenAsync(token);
+                return Results.Ok(success);
+            },
+            requireAuthentication: true
+        );
+        
+        MapPostEndpoint<string>(
+            app,
+            "/v1/auth/expired-token",
+            async (service, token) =>
+            {
+                var success = await service.ExpiredTokenAsync(token);
                 return Results.Ok(success);
             },
             requireAuthentication: true
