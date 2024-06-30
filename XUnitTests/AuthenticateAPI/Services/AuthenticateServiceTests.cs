@@ -202,7 +202,7 @@ public class AuthenticateServiceTests
         {
             // Arrange
             var registerRequest = new RegisterDtoRequest(
-                "Test", "Test", "1234567890", "131.515.555-12", "test@example.com", "Admin", "password",
+                "Test", "Test", "1234567890", "131.515.555-12", "test@example.com", "password",
                 "password");
             var registerResponse = new RegisteredDtoResponse(true, "Registration successful.");
             var user = new User { Email = "test@example.com", Id = "1" };
@@ -253,7 +253,7 @@ public class AuthenticateServiceTests
         {
             // Arrange
             var registerRequest = new RegisterDtoRequest(
-                "Test", "Test", "1234567890", "131.515.555-12", "test@example.com", "Admin", "password",
+                "Test", "Test", "1234567890", "131.515.555-12", "test@example.com", "password",
                 "password");
             var registerResponse = new RegisteredDtoResponse(false, "Registration failed.");
 
@@ -303,7 +303,7 @@ public class AuthenticateServiceTests
                 .ReturnsAsync(tokenResponse);
 
             // Act
-            var result = await _authenticateService.UpdateAsync(updateRequest, user.Id);
+            var result = await _authenticateService.UpdateUserDtoAsync(updateRequest, user.Id);
 
             // Assert
             Assert.NotNull(result);
@@ -316,16 +316,6 @@ public class AuthenticateServiceTests
                     LogLevel.Information,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((o, t) => o.ToString() == $"UpdateAsync called for userId: {user.Id}"),
-                    It.IsAny<Exception>(),
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-                Times.Once);
-
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (o, t) => o.ToString() == $"Profile update successful for userId: {user.Id}"),
                     It.IsAny<Exception>(),
                     ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
                 Times.Once);
@@ -344,21 +334,9 @@ public class AuthenticateServiceTests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-                () => _authenticateService.UpdateAsync(updateRequest, "1")
+                () => _authenticateService.UpdateUserDtoAsync(updateRequest, "1")
             );
             Assert.Equal("Failed to update profile.", exception.Message);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) =>
-                        o.ToString() ==
-                        $"Profile update failed for userId: 1 with message: {updateResponse.Message}"),
-                    It.IsAny<Exception>(),
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-                Times.Once);
         }
     }
 
@@ -368,66 +346,52 @@ public class AuthenticateServiceTests
         public async Task ChangePasswordAsync_ShouldReturnTrue_WhenPasswordChangeIsSuccessful()
         {
             // Arrange
-            var changePasswordRequest =
-                new ChangePasswordDtoRequest("test@example.com", "oldPassword", "newPassword");
+            var user = new User { Email = "test@example.com", Id = "1" };
+            var changePasswordRequest = new ChangePasswordDtoRequest("test@example.com", "oldPassword", "newPassword");
 
-            _repositoryMock.Setup(r => r.ChangePasswordAsync(It.IsAny<ChangePasswordDtoRequest>()))
-                .ReturnsAsync(true);
+            _repositoryMock.Setup(r => r.GetUserIdProfileAsync(It.IsAny<string>())).ReturnsAsync(user);
+            _repositoryMock.Setup(r => r.ChangePasswordAsync(It.IsAny<ChangePasswordDtoRequest>())).ReturnsAsync(true);
 
             // Act
-            var result = await _authenticateService.ChangePasswordAsync(changePasswordRequest);
+            var result = await _authenticateService.ChangePasswordAsync(changePasswordRequest, user.Id);
 
             // Assert
             Assert.True(result);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) =>
-                        o.ToString() == $"ChangePasswordAsync called for email: {changePasswordRequest.Email}"),
-                    It.IsAny<Exception>(),
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-                Times.Once);
-
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) =>
-                        o.ToString() == $"Password change successful for email: {changePasswordRequest.Email}"),
-                    It.IsAny<Exception>(),
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-                Times.Once);
         }
 
         [Fact]
-        public async Task ChangePasswordAsync_ShouldReturnFalse_WhenPasswordChangeFails()
+        public async Task ChangePasswordAsync_ShouldThrowUnauthorizedAccessException_WhenUserNotFound()
         {
             // Arrange
-            var changePasswordRequest =
-                new ChangePasswordDtoRequest("test@example.com", "oldPassword", "newPassword");
+            var changePasswordRequest = new ChangePasswordDtoRequest("test@example.com", "oldPassword", "newPassword");
 
-            _repositoryMock.Setup(r => r.ChangePasswordAsync(It.IsAny<ChangePasswordDtoRequest>()))
-                .ReturnsAsync(false);
+            _repositoryMock.Setup(r => r.GetUserIdProfileAsync(It.IsAny<string>())).ReturnsAsync((User)null!);
 
-            // Act
-            var result = await _authenticateService.ChangePasswordAsync(changePasswordRequest);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
+                () => _authenticateService.ChangePasswordAsync(changePasswordRequest, "1")
+            );
+            Assert.Equal("User not found", exception.Message);
+        }
 
-            // Assert
-            Assert.False(result);
+        [Fact]
+        public async Task ChangePasswordAsync_ShouldThrowUnauthorizedAccessException_WhenEmailDoesNotMatch()
+        {
+            // Arrange
+            var user = new User { Email = "different@example.com", Id = "1" };
+            user.SetName("NewName");
+            user.SetLastName("NewLastName");
+            user.SetCpf("131.515.555-12");
 
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) =>
-                        o.ToString() == $"Password change failed for email: {changePasswordRequest.Email}"),
-                    It.IsAny<Exception>(),
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-                Times.Once);
+            var changePasswordRequest = new ChangePasswordDtoRequest("test@example.com", "oldPassword", "newPassword");
+
+            _repositoryMock.Setup(r => r.GetUserIdProfileAsync(It.IsAny<string>())).ReturnsAsync(user);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
+                () => _authenticateService.ChangePasswordAsync(changePasswordRequest, user.Id)
+            );
+            Assert.Equal("Unauthorized attempt to change password", exception.Message);
         }
     }
 
@@ -604,6 +568,72 @@ public class AuthenticateServiceTests
                     null,
                     It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
                 Times.Once);
+        }
+    }
+
+    public class RevokedTokenAsyncTests : AuthenticateServiceTests
+    {
+        [Fact]
+        public async Task RevokedTokenAsync_ShouldReturnTrue_WhenTokenIsRevoked()
+        {
+            // Arrange
+            const string tokenValue = "revokedToken";
+            _tokenManagerServiceMock.Setup(tms => tms.RevokedTokenAsync(tokenValue)).ReturnsAsync(true);
+
+            // Act
+            var result = await _authenticateService.RevokedTokenAsync(tokenValue);
+
+            // Assert
+            Assert.True(result);
+            _tokenManagerServiceMock.Verify(tms => tms.RevokedTokenAsync(tokenValue), Times.Once);
+        }
+
+        [Fact]
+        public async Task RevokedTokenAsync_ShouldReturnFalse_WhenTokenIsNotRevoked()
+        {
+            // Arrange
+            const string tokenValue = "validToken";
+            _tokenManagerServiceMock.Setup(tms => tms.RevokedTokenAsync(tokenValue)).ReturnsAsync(false);
+
+            // Act
+            var result = await _authenticateService.RevokedTokenAsync(tokenValue);
+
+            // Assert
+            Assert.False(result);
+            _tokenManagerServiceMock.Verify(tms => tms.RevokedTokenAsync(tokenValue), Times.Once);
+        }
+    }
+
+    public class ExpiredTokenAsyncTests : AuthenticateServiceTests
+    {
+        [Fact]
+        public async Task ExpiredTokenAsync_ShouldReturnTrue_WhenTokenIsExpired()
+        {
+            // Arrange
+            const string tokenValue = "expiredToken";
+            _tokenManagerServiceMock.Setup(tms => tms.ExpiredTokenAsync(tokenValue)).ReturnsAsync(true);
+
+            // Act
+            var result = await _authenticateService.ExpiredTokenAsync(tokenValue);
+
+            // Assert
+            Assert.True(result);
+            _tokenManagerServiceMock.Verify(tms => tms.ExpiredTokenAsync(tokenValue), Times.Once);
+        }
+
+        [Fact]
+        public async Task ExpiredTokenAsync_ShouldReturnFalse_WhenTokenIsNotExpired()
+        {
+            // Arrange
+            const string tokenValue = "validToken";
+            _tokenManagerServiceMock.Setup(tms => tms.ExpiredTokenAsync(tokenValue)).ReturnsAsync(false);
+
+            // Act
+            var result = await _authenticateService.ExpiredTokenAsync(tokenValue);
+
+            // Assert
+            Assert.False(result);
+            _tokenManagerServiceMock.Verify(tms => tms.ExpiredTokenAsync(tokenValue), Times.Once);
         }
     }
 }

@@ -67,7 +67,6 @@ public class RegisterStrategyTests : IDisposable
             "+1234567890",
             "123.456.789-10",
             "john@example.com",
-            "Admin",
             "123456789",
             "123456789"
         );
@@ -94,7 +93,6 @@ public class RegisterStrategyTests : IDisposable
             "+1234567890",
             "123.456.789-10",
             "john@example.com",
-            "Admin",
             "123456789",
             "987654321"
         );
@@ -125,7 +123,6 @@ public class RegisterStrategyTests : IDisposable
             "+1234567890",
             "123.456.789-10",
             "john@example.com",
-            "Admin",
             "123456789",
             "123456789"
         );
@@ -148,7 +145,6 @@ public class RegisterStrategyTests : IDisposable
             "+1234567890",
             "123.456.789-10",
             "john@example.com",
-            "Admin",
             "123456789",
             "123456789"
         );
@@ -173,7 +169,6 @@ public class RegisterStrategyTests : IDisposable
             "+1234567890",
             "123.456.789-10",
             "john@example.com",
-            "Admin",
             "Password123!",
             "Password456!"
         );

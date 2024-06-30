@@ -24,7 +24,7 @@ public class AuthenticatedRepositoryTests
 
     protected AuthenticatedRepositoryTests()
     {
-           var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
@@ -73,8 +73,8 @@ public class AuthenticatedRepositoryTests
             var user2 = new User { Id = "2", Email = "user2@example.com", PhoneNumber = "+5540028921" };
             user2.SetName("Name 2");
             user2.SetLastName("Last Name 2");
-            user2.SetCpf("123.456.789-11"); 
-            user2.SetRole("User"); 
+            user2.SetCpf("123.456.789-11");
+            user2.SetRole("User");
 
             _appDbContext.Users.AddRange(user1, user2);
             await _appDbContext.SaveChangesAsync();
@@ -151,7 +151,7 @@ public class AuthenticatedRepositoryTests
         {
             // Arrange
             var request = new RegisterDtoRequest("John", "Doe", "+1234567890", "123.456.789-01", "john.doe@example.com",
-                "Admin","StrongP@ssw0rd", "StrongP@ssw0rd");
+                "StrongP@ssw0rd", "StrongP@ssw0rd");
 
             var expectedResponse = new RegisteredDtoResponse(true, "Registration successful.");
 
@@ -178,7 +178,7 @@ public class AuthenticatedRepositoryTests
         {
             // Arrange
             var request = new RegisterDtoRequest("John", "Doe", "+1234567890", "123.456.789-01", "john.doe@example.com",
-                "Admin", "StrongP@ssw0rd", "StrongP@ssw0r");
+                "StrongP@ssw0rd", "StrongP@ssw0r");
 
             var validationErrors = new List<string> { "Email already used." };
             var expectedResponse = new RegisteredDtoResponse(false, string.Join(Environment.NewLine, validationErrors));
@@ -375,6 +375,57 @@ public class AuthenticatedRepositoryTests
         }
     }
 
+    public class GetUserIdProfileAsyncTests : AuthenticatedRepositoryTests
+    {
+        [Fact(DisplayName = "GetUserProfileAsync should return user profile when user is found")]
+        public async Task GetUserIdProfileAsync_Should_Return_User_Profile_When_User_Is_Found()
+        {
+            // Arrange
+            const string userEmail = "john@example.com";
+            var user = new User
+            {
+                Id = "123",
+                Email = userEmail,
+                PhoneNumber = "+1234567890"
+            };
+            user.SetName("John");
+            user.SetLastName("Doe");
+
+            _userManagerMock
+                .Setup(um => um.FindByIdAsync(user.Id))
+                .ReturnsAsync(user);
+
+            // Act
+            var result = await _authenticatedRepository.GetUserIdProfileAsync(user.Id);
+
+            // Assert
+            result.Should().NotBeNull();
+            result!.Email.Should().Be(user.Email);
+            result.Name.Should().Be(user.Name);
+            result.LastName.Should().Be(user.LastName);
+            result.PhoneNumber.Should().Be(user.PhoneNumber);
+            _userManagerMock.Verify(um => um.FindByIdAsync(user.Id), Times.Once);
+        }
+
+        [Fact(DisplayName = "GetUserProfileAsync should return null when user is not found")]
+        public async Task GetUserIdProfileAsync_Should_Return_Null_When_User_Is_Not_Found()
+        {
+            // Arrange
+            const string userId = " ";
+
+            _userManagerMock
+                .Setup(um => um.FindByIdAsync(userId))
+                .ReturnsAsync((User)null!);
+
+            // Act
+            var result = await _authenticatedRepository.GetUserProfileAsync(userId);
+
+            // Assert
+            result.Should().BeNull();
+            _userManagerMock.Verify(um => um.FindByEmailAsync(userId), Times.Once);
+        }
+    }
+
     public class ForgotPasswordAsyncTests : AuthenticatedRepositoryTests
     {
         [Fact(DisplayName = "ForgotPasswordAsync should return true when password reset is successful")]
@@ -446,7 +497,7 @@ public class AuthenticatedRepositoryTests
             _signInManagerMock.Verify(sm => sm.SignOutAsync(), Times.Once);
         }
     }
-    
+
     public class SaveAsyncTests : AuthenticatedRepositoryTests
     {
         [Fact(DisplayName = "SaveAsync should update user in the database")]

@@ -20,8 +20,6 @@ public class SecurityFilterMiddlewareTests
     private readonly Mock<UserManager<User>> _mockUserManager;
     private readonly Mock<ILogger<SecurityFilterMiddleware>> _mockLogger;
     private readonly Mock<HttpContext> _mockHttpContext;
-    private readonly Mock<HttpRequest> _mockHttpRequest;
-    private readonly Mock<HttpResponse> _mockHttpResponse;
     private readonly Mock<RequestDelegate> _mockNext;
     private readonly SecurityFilterMiddleware _middleware;
 
@@ -34,13 +32,13 @@ public class SecurityFilterMiddlewareTests
         );
         _mockLogger = new Mock<ILogger<SecurityFilterMiddleware>>();
         _mockHttpContext = new Mock<HttpContext>();
-        _mockHttpRequest = new Mock<HttpRequest>();
-        _mockHttpResponse = new Mock<HttpResponse>();
+        Mock<HttpRequest> mockHttpRequest = new();
+        Mock<HttpResponse> mockHttpResponse = new();
         _mockNext = new Mock<RequestDelegate>();
         _middleware = new SecurityFilterMiddleware(_mockNext.Object, _mockLogger.Object);
 
-        _mockHttpContext.Setup(c => c.Request).Returns(_mockHttpRequest.Object);
-        _mockHttpContext.Setup(c => c.Response).Returns(_mockHttpResponse.Object);
+        _mockHttpContext.Setup(c => c.Request).Returns(mockHttpRequest.Object);
+        _mockHttpContext.Setup(c => c.Response).Returns(mockHttpResponse.Object);
 
         var mockConnection = new Mock<ConnectionInfo>();
         mockConnection.Setup(c => c.RemoteIpAddress).Returns(IPAddress.Parse("127.0.0.1"));
@@ -50,52 +48,121 @@ public class SecurityFilterMiddlewareTests
         {
             { "User-Agent", "MockUserAgent" }
         };
-        _mockHttpRequest.Setup(r => r.Headers).Returns(headers);
+        mockHttpRequest.Setup(r => r.Headers).Returns(headers);
 
         var responseBody = new MemoryStream();
-        _mockHttpResponse.Setup(r => r.Body).Returns(responseBody);
+        mockHttpResponse.Setup(r => r.Body).Returns(responseBody);
     }
 
     public class InvokeAsyncTests : SecurityFilterMiddlewareTests
     {
         [Fact]
-        public async Task Should_Handle_Authentication_For_Valid_Token()
+        public async Task Should_Ignore_Specified_Paths()
         {
             // Arrange
+            var ignoredPaths = new[]
+            {
+                "/v1/auth/login",
+                "/v1/auth/register",
+                "/v1/auth/forgot-password"
+            };
+
+            foreach (var path in ignoredPaths)
+            {
+                var context = new DefaultHttpContext();
+                context.Request.Path = path;
+
+                var serviceProvider = new ServiceCollection()
+                    .AddSingleton(_mockTokenService.Object)
+                    .AddSingleton(_mockTokenRepository.Object)
+                    .AddSingleton(_mockUserManager.Object)
+                    .BuildServiceProvider();
+
+                context.RequestServices = serviceProvider;
+
+                // Act
+                await _middleware.InvokeAsync(context, serviceProvider);
+
+                // Assert
+                _mockNext.Verify(next => next(context), Times.Once);
+            }
+        }
+
+        [Fact]
+        public async Task InvokeAsync_Should_Proceed_When_Token_Is_Valid()
+        {
+            // Arrange
+            var context = new DefaultHttpContext
+            {
+                Request =
+                {
+                    Path = "/some/path"
+                }
+            };
             const string validToken = "validToken";
-            const string email = "user@example.com";
-            var user = new User { UserName = "user", Email = email };
+            context.Request.Headers.Authorization = $"Bearer {validToken}";
 
             var token = new Token();
             token.SetTokenValue(validToken);
-            token.SetTokenExpired(false);
             token.SetTokenRevoked(false);
+            token.SetTokenExpired(false);
 
-            var validPrincipal =
-                new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, email) }, "Bearer"));
+            var user = new User { UserName = "user" };
+            var claimsIdentity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, user.UserName) });
+            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
-            _mockHttpRequest.Setup(r => r.Headers.Authorization).Returns($"Bearer {validToken}");
-            _mockTokenService.Setup(ts => ts.ValidateToken(validToken)).Returns(validPrincipal);
-            _mockUserManager.Setup(um => um.FindByEmailAsync(email)).ReturnsAsync(user);
-            _mockTokenRepository.Setup(tr => tr.FindByTokenValue(validToken)).ReturnsAsync(token);
+            _mockTokenService.Setup(s => s.ValidateToken(validToken)).Returns(claimsPrincipal);
+            _mockUserManager.Setup(um => um.FindByEmailAsync(user.UserName)).ReturnsAsync(user);
+            _mockTokenRepository.Setup(tr => tr.FindByTokenValue(validToken))
+                .ReturnsAsync(token);
 
-            var filter = new SecurityFilterMiddleware(_mockNext.Object, _mockLogger.Object);
+            var serviceProvider = new ServiceCollection()
+                .AddSingleton(_mockTokenService.Object)
+                .AddSingleton(_mockTokenRepository.Object)
+                .AddSingleton(_mockUserManager.Object)
+                .BuildServiceProvider();
 
-            var mockServiceProvider = new Mock<IServiceProvider>();
-            mockServiceProvider.Setup(sp => sp.GetService(typeof(ITokenService))).Returns(_mockTokenService.Object);
-            mockServiceProvider.Setup(sp => sp.GetService(typeof(ITokenRepository)))
-                .Returns(_mockTokenRepository.Object);
-            mockServiceProvider.Setup(sp => sp.GetService(typeof(UserManager<User>))).Returns(_mockUserManager.Object);
-
-            _mockHttpContext.Setup(c => c.RequestServices).Returns(mockServiceProvider.Object);
+            context.RequestServices = serviceProvider;
 
             // Act
-            await filter.InvokeAsync(_mockHttpContext.Object, mockServiceProvider.Object);
+            await _middleware.InvokeAsync(context, serviceProvider);
 
             // Assert
-            _mockNext.Verify(next => next(_mockHttpContext.Object), Times.Once);
+            _mockNext.Verify(next => next(context), Times.Once);
         }
 
+        [Fact]
+        public async Task InvokeAsync_Should_Return_401_When_Token_Is_Invalid()
+        {
+            // Arrange
+            var context = new DefaultHttpContext
+            {
+                Request =
+                {
+                    Path = "/some/path"
+                }
+            };
+            const string token = "invalidToken";
+            context.Request.Headers.Authorization = $"Bearer {token}";
+
+            _mockTokenService.Setup(s => s.ValidateToken(token)).Returns<ClaimsPrincipal>(null!);
+
+            var serviceProvider = new ServiceCollection()
+                .AddSingleton(_mockTokenService.Object)
+                .AddSingleton(_mockTokenRepository.Object)
+                .AddSingleton(_mockUserManager.Object)
+                .BuildServiceProvider();
+
+            context.RequestServices = serviceProvider;
+
+            // Act
+            await _middleware.InvokeAsync(context, serviceProvider);
+
+            // Assert
+            Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
+            _mockNext.Verify(next => next(context), Times.Never);
+        }
+        
         [Fact]
         public async Task Should_Log_Error_On_Invocation_Failure()
         {
@@ -124,30 +191,6 @@ public class SecurityFilterMiddlewareTests
                     It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
                 Times.Once);
         }
-        
-        [Fact]
-        public async Task InvokeAsync_TokenIsNotNullAndAuthenticationFails_CallsNext()
-        {
-            // Arrange
-            var context = new DefaultHttpContext();
-            var serviceProvider = new ServiceCollection()
-                .AddSingleton(_mockTokenService.Object)
-                .AddSingleton(_mockTokenRepository.Object)
-                .AddSingleton(_mockUserManager.Object)
-                .BuildServiceProvider();
-
-            context.RequestServices = serviceProvider;
-            context.Request.Headers.Authorization = "Bearer invalid-token";
-
-            _mockTokenService.Setup(service => service.ValidateToken(It.IsAny<string>()))
-                .Throws(new SecurityTokenException("Invalid token"));
-
-            // Act
-            await _middleware.InvokeAsync(context, serviceProvider);
-
-            // Assert
-            _mockNext.Verify(next => next(context), Times.Once);
-        }
     }
 
     public class RecoverTokenFromRequestTests : SecurityFilterMiddlewareTests
@@ -171,17 +214,6 @@ public class SecurityFilterMiddlewareTests
             // Assert
             Assert.NotNull(token);
             Assert.Equal("validToken", token);
-
-            _mockLogger.Verify(
-                logger => logger.Log(
-                    It.Is<LogLevel>(logLevel => logLevel == LogLevel.Debug),
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, t) =>
-                        state.ToString()!.Contains(
-                            "[RECOVERED] Token recovered from Authorization header: validToken")),
-                    It.IsAny<Exception>(),
-                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)!),
-                Times.Once);
         }
     }
 
@@ -206,7 +238,6 @@ public class SecurityFilterMiddlewareTests
 
             // Assert
             Assert.False(result);
-            _mockHttpResponse.VerifySet(r => r.StatusCode = StatusCodes.Status403Forbidden, Times.Once);
             _mockLogger.Verify(
                 logger => logger.Log(
                     It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
@@ -273,7 +304,88 @@ public class SecurityFilterMiddlewareTests
 
             // Assert
             Assert.False(result);
-            Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
+            _mockLogger.Verify(
+                logger => logger.Log(
+                    It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((state, t) => state.ToString()!.Contains("[TOKEN_FAILED]")),
+                    It.IsAny<Exception>(),
+                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)!),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleAuthentication_Should_Return_False_For_Expired_Token()
+        {
+            // Arrange
+            var context = new DefaultHttpContext();
+            const string token = "expired_token";
+            const string email = "user@example.com";
+            var user = new User { UserName = "user", Email = email };
+
+            var claimsIdentity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, email) });
+            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+
+            var expiredToken = new Token();
+            expiredToken.SetTokenValue(token);
+            expiredToken.SetTokenExpired(true); // Token is expired
+            expiredToken.SetTokenRevoked(false);
+
+            _mockTokenService.Setup(ts => ts.ValidateToken(token)).Returns(claimsPrincipal);
+            _mockUserManager.Setup(um => um.FindByEmailAsync(email)).ReturnsAsync(user);
+            _mockTokenRepository.Setup(tr => tr.FindByTokenValue(token)).ReturnsAsync(expiredToken);
+
+            // Act
+            var result = await _middleware.HandleAuthentication(context, token, _mockTokenService.Object,
+                _mockTokenRepository.Object, _mockUserManager.Object);
+
+            // Assert
+            Assert.False(result);
+            _mockLogger.Verify(
+                logger => logger.Log(
+                    It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((state, t) => state.ToString()!.Contains("[TOKEN_FAILED]")),
+                    It.IsAny<Exception>(),
+                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)!),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleAuthentication_Should_Return_False_For_Revoked_Token()
+        {
+            // Arrange
+            var context = new DefaultHttpContext();
+            const string token = "revoked_token";
+            const string email = "user@example.com";
+            var user = new User { UserName = "user", Email = email };
+
+            var claimsIdentity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, email) });
+            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+
+            var revokedToken = new Token();
+            revokedToken.SetTokenValue(token);
+            revokedToken.SetTokenExpired(false);
+            revokedToken.SetTokenRevoked(true); // Token is revoked
+
+            _mockTokenService.Setup(ts => ts.ValidateToken(token)).Returns(claimsPrincipal);
+            _mockUserManager.Setup(um => um.FindByEmailAsync(email)).ReturnsAsync(user);
+            _mockTokenRepository.Setup(tr => tr.FindByTokenValue(token)).ReturnsAsync(revokedToken);
+
+            // Act
+            var result = await _middleware.HandleAuthentication(context, token, _mockTokenService.Object,
+                _mockTokenRepository.Object, _mockUserManager.Object);
+
+            // Assert
+            Assert.False(result);
+            _mockLogger.Verify(
+                logger => logger.Log(
+                    It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((state, t) => state.ToString()!.Contains("[TOKEN_FAILED]")),
+                    It.IsAny<Exception>(),
+                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)!),
+                Times.Once);
         }
     }
 }

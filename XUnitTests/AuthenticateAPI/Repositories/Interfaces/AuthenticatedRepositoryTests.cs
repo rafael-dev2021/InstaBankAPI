@@ -43,7 +43,6 @@ public class AuthenticatedRepositoryTests
                 "+1234567890",
                 "123.456.789-10",
                 "john@example.com",
-                "Admin",
                 "123456789",
                 "123456789");
 
