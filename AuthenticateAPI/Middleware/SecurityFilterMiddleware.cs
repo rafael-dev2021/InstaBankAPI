@@ -14,8 +14,7 @@ public class SecurityFilterMiddleware(RequestDelegate next, ILogger<SecurityFilt
     [
         "/v1/auth/login",
         "/v1/auth/register",
-        "/v1/auth/forgot-password",
-        "/v1/auth/refresh-token"
+        "/v1/auth/forgot-password"
     ];
 
     public async Task InvokeAsync(HttpContext context, IServiceProvider serviceProvider)
