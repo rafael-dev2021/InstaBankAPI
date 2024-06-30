@@ -8,8 +8,8 @@ public interface IAuthenticateService
     Task<IEnumerable<UserDtoResponse>> GetAllUsersDtoAsync();
     Task<TokenDtoResponse> LoginAsync(LoginDtoRequest request);
     Task<TokenDtoResponse> RegisterAsync(RegisterDtoRequest request);
-    Task<TokenDtoResponse> UpdateAsync(UpdateUserDtoRequest request, string userId);
-    Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest request);
+    Task<TokenDtoResponse> UpdateUserDtoAsync(UpdateUserDtoRequest request, string userId);
+    Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest request, string userId);
     Task LogoutAsync();
     Task<bool> ForgotPasswordAsync(string email, string newPassword);
     Task<TokenDtoResponse> RefreshTokenAsync(RefreshTokenDtoRequest refreshTokenDtoRequest); 

@@ -64,7 +64,7 @@ public class AuthenticateService(
         return tokenResponse;
     }
 
-    public async Task<TokenDtoResponse> UpdateAsync(UpdateUserDtoRequest request, string userId)
+    public async Task<TokenDtoResponse> UpdateUserDtoAsync(UpdateUserDtoRequest request, string userId)
     {
         logger.LogInformation("UpdateAsync called for userId: {UserId}", userId);
 
@@ -86,21 +86,26 @@ public class AuthenticateService(
         return tokenResponse;
     }
 
-    public async Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest request)
+    public async Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest request, string userId)
     {
-        logger.LogInformation("ChangePasswordAsync called for email: {Email}", request.Email);
+        logger.LogInformation("ChangePasswordAsync called for userId: {UserId}", userId);
 
-        var result = await repository.ChangePasswordAsync(request);
-        if (result)
+        var user = await repository.GetUserIdProfileAsync(userId);
+        if (user == null)
         {
-            logger.LogInformation("Password change successful for email: {Email}", request.Email);
-        }
-        else
-        {
-            logger.LogWarning("Password change failed for email: {Email}", request.Email);
+            logger.LogWarning("User not found for userId: {UserId}", userId);
+            throw new UnauthorizedAccessException("User not found");
         }
 
-        return result;
+        if (user.Email != request.Email)
+        {
+            logger.LogWarning("Unauthorized attempt to change password for email: {Email}", request.Email);
+            throw new UnauthorizedAccessException("Unauthorized attempt to change password");
+        }
+
+        var changePasswordResult = await repository.ChangePasswordAsync(request);
+
+        return changePasswordResult;
     }
 
     public Task LogoutAsync()
