@@ -48,21 +48,13 @@ public class TokenManagerService(
     public async Task<bool> RevokedTokenAsync(string token)
     {
         var dbToken = await tokenRepository.FindByTokenValue(token);
-        if (dbToken == null) return false;
-
-        dbToken.SetTokenRevoked(true);
-        await tokenRepository.SaveTokenAsync(dbToken);
-        return true;
+        return dbToken is { TokenRevoked: true };
     }
 
     public async Task<bool> ExpiredTokenAsync(string token)
     {
         var dbToken = await tokenRepository.FindByTokenValue(token);
-        if (dbToken == null) return false;
-
-        dbToken.SetTokenRevoked(true);
-        await tokenRepository.SaveTokenAsync(dbToken);
-        return true;
+        return dbToken is { TokenExpired: true };
     }
 
     public async Task ClearTokensAsync(string userId)
