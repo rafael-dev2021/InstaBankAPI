@@ -1,0 +1,21 @@
+﻿services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver_banking_serviceAPI
+    environment:
+      - SA_PASSWORD=${DB_PASSWORD}
+      - ACCEPT_EULA=Y
+    ports:
+      - "1434:1433"  
+    volumes:
+      - sqlserver_banking_serviceAPI_data:/var/opt/mssql
+    networks:
+      - banking_serviceAPI_network
+    env_file:
+      - .env
+
+volumes:
+  sqlserver_banking_serviceAPI_data:
+
+networks:
+  banking_serviceAPI_network:
