@@ -8,6 +8,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddOpenApiExtensions();
 builder.Services.AddInfrastructureModule();
+builder.Services.AddRedisCacheDependencyInjection();
 
 var app = builder.Build();
 
@@ -33,7 +34,7 @@ app.UseAuthorization();
 
 app.MapAuthenticateEndpoints();
 
-app.Run();
+await app.RunAsync();
 
 
 
