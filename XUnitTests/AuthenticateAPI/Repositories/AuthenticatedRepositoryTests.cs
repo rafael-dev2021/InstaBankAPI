@@ -411,18 +411,18 @@ public class AuthenticatedRepositoryTests
         public async Task GetUserIdProfileAsync_Should_Return_Null_When_User_Is_Not_Found()
         {
             // Arrange
-            const string userId = " ";
+            const string userId = "nonexistid";
 
             _userManagerMock
                 .Setup(um => um.FindByIdAsync(userId))
                 .ReturnsAsync((User)null!);
 
             // Act
-            var result = await _authenticatedRepository.GetUserProfileAsync(userId);
+            var result = await _authenticatedRepository.GetUserIdProfileAsync(userId);
 
             // Assert
             result.Should().BeNull();
-            _userManagerMock.Verify(um => um.FindByEmailAsync(userId), Times.Once);
+            _userManagerMock.Verify(um => um.FindByIdAsync(userId), Times.Once);
         }
     }
 
