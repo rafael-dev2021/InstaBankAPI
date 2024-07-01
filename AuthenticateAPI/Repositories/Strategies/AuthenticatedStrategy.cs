@@ -3,25 +3,58 @@ using AuthenticateAPI.Dto.Response;
 using AuthenticateAPI.Models;
 using AuthenticateAPI.Repositories.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace AuthenticateAPI.Repositories.Strategies;
 
-public class AuthenticatedStrategy(SignInManager<User> signInManager) : IAuthenticatedStrategy
+public class AuthenticatedStrategy(SignInManager<User> signInManager, IDistributedCache cache) : IAuthenticatedStrategy
 {
+    private const string LoginAttemptsKeyPrefix = "login_attempts_";
+
     public async Task<AuthenticatedDtoResponse> AuthenticatedAsync(LoginDtoRequest request)
     {
-        var result = await signInManager.PasswordSignInAsync(request.Email!, request.Password!,
-            isPersistent: request.RememberMe, lockoutOnFailure: true);
+        var loginAttemptsKey = $"{LoginAttemptsKeyPrefix}{request.Email}";
+        var loginAttempts = await GetLoginAttemptsAsync(loginAttemptsKey);
 
-        var errorMessages = new Dictionary<Func<SignInResult, bool>, string>
+        if (loginAttempts >= 5)
         {
-            { r => r.Succeeded, "Login successful." },
-            { r => r.IsLockedOut, "Your account is locked. Please contact support." },
-            { _ => true, "Invalid email or password. Please try again." }
-        };
+            return new AuthenticatedDtoResponse(false, "Your account is locked. Please contact support.");
+        }
 
-        var message = errorMessages.First(kv => kv.Key(result)).Value;
+        var result = await signInManager.PasswordSignInAsync(request.Email!, request.Password!,
+            isPersistent: request.RememberMe, lockoutOnFailure: false);
 
-        return new AuthenticatedDtoResponse(result.Succeeded, message);
+        if (result.Succeeded)
+        {
+            await ResetLoginAttemptsAsync(loginAttemptsKey);
+            return new AuthenticatedDtoResponse(true, "Login successful.");
+        }
+
+        await IncrementLoginAttemptsAsync(loginAttemptsKey);
+        
+        var errorMessage = result.IsLockedOut ? "Your account is locked. Please contact support." :
+            "Invalid email or password. Please try again.";
+        return new AuthenticatedDtoResponse(false, errorMessage);
+    }
+
+    private async Task<int> GetLoginAttemptsAsync(string cacheKey)
+    {
+        var attempts = await cache.GetStringAsync(cacheKey);
+        return attempts != null ? int.Parse(attempts) : 0;
+    }
+
+    private async Task IncrementLoginAttemptsAsync(string cacheKey)
+    {
+        var attempts = await GetLoginAttemptsAsync(cacheKey);
+        attempts++;
+        await cache.SetStringAsync(cacheKey, attempts.ToString(), new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+        });
+    }
+
+    private async Task ResetLoginAttemptsAsync(string cacheKey)
+    {
+        await cache.RemoveAsync(cacheKey);
     }
 }
