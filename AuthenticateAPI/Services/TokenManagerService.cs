@@ -45,16 +45,14 @@ public class TokenManagerService(
         logger.LogInformation("All tokens revoked for user {UserId}", user.Id);
     }
 
-    public async Task<bool> RevokedTokenAsync(string token)
+    public async Task<bool> RevokeTokenAsync(string token)
     {
         var dbToken = await tokenRepository.FindByTokenValue(token);
-        return dbToken is { TokenRevoked: true };
-    }
+        if (dbToken == null) return false;
 
-    public async Task<bool> ExpiredTokenAsync(string token)
-    {
-        var dbToken = await tokenRepository.FindByTokenValue(token);
-        return dbToken is { TokenExpired: true };
+        dbToken.SetTokenRevoked(true);
+        await tokenRepository.SaveTokenAsync(dbToken);
+        return true;
     }
 
     public async Task ClearTokensAsync(string userId)

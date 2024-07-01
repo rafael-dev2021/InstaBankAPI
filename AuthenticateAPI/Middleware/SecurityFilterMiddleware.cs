@@ -1,5 +1,4 @@
 ﻿using System.Security.Claims;
-using System.Text.Json;
 using AuthenticateAPI.Models;
 using AuthenticateAPI.Repositories.Interfaces;
 using AuthenticateAPI.Security;
@@ -10,44 +9,27 @@ namespace AuthenticateAPI.Middleware;
 
 public class SecurityFilterMiddleware(RequestDelegate next, ILogger<SecurityFilterMiddleware> logger)
 {
-    private readonly List<string> _ignorePaths =
-    [
-        "/v1/auth/login",
-        "/v1/auth/register",
-        "/v1/auth/forgot-password"
-    ];
-
     public async Task InvokeAsync(HttpContext context, IServiceProvider serviceProvider)
     {
         try
         {
-            var path = context.Request.Path.Value?.ToLower();
-            if (path != null && _ignorePaths.Contains(path))
-            {
-                await next(context);
-                return;
-            }
-
             var tokenService = serviceProvider.GetRequiredService<ITokenService>();
             var tokenRepository = serviceProvider.GetRequiredService<ITokenRepository>();
             var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
 
             var token = RecoverTokenFromRequest(context.Request);
+            var isAuthenticated = false;
+
             if (token != null)
             {
-                var isAuthenticated =
+                isAuthenticated =
                     await HandleAuthentication(context, token, tokenService, tokenRepository, userManager);
-                if (isAuthenticated)
-                {
-                    await next(context);
-                    return;
-                }
             }
 
-            var errorResponse = new { Message = "User is not authenticated." };
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
+            if (!isAuthenticated)
+            {
+                await next(context);
+            }
         }
         catch (Exception e)
         {
@@ -60,11 +42,11 @@ public class SecurityFilterMiddleware(RequestDelegate next, ILogger<SecurityFilt
         if (request.Headers.TryGetValue("Authorization", out var authHeader))
         {
             var token = authHeader.ToString().Replace("Bearer ", string.Empty);
-            logger.LogInformation("[RECOVERED] Token recovered from Authorization header: {Token}", token);
+            logger.LogDebug("[RECOVERED] Token recovered from Authorization header: {Token}", token);
             return token;
         }
 
-        logger.LogInformation("[NO_AUTH_HEADER] No Authorization header found in the request.");
+        logger.LogDebug("[NO_AUTH_HEADER] No Authorization header found in the request.");
         return null;
     }
 
@@ -74,22 +56,20 @@ public class SecurityFilterMiddleware(RequestDelegate next, ILogger<SecurityFilt
         try
         {
             var email = tokenService.ValidateToken(token)?.Identity?.Name;
-            if (email != null)
-            {
-                var user = await userManager.FindByEmailAsync(email);
-                var isTokenValid = await IsTokenValid(tokenRepository, token);
+            var user = await userManager.FindByEmailAsync(email!);
+            var isTokenValid = await IsTokenValid(tokenRepository, token);
 
-                if (user != null && isTokenValid)
-                {
-                    SetAuthenticationInSecurityContext(context, user);
-                    logger.LogInformation(
-                        "[USER_AUTHENTICATED] User: {UserName} successfully authenticated with token: {Token}.",
-                        user.UserName, token);
-                    return true;
-                }
+            if (user != null && isTokenValid)
+            {
+                SetAuthenticationInSecurityContext(context, user);
+                logger.LogInformation(
+                    "[USER_AUTHENTICATED] User: {UserName} successfully authenticated with token: {Token}.",
+                    user.UserName, token);
+                return true;
             }
 
             LogError(context, token);
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
             return false;
         }
         catch (SecurityTokenException e)
@@ -135,7 +115,7 @@ public class SecurityFilterMiddleware(RequestDelegate next, ILogger<SecurityFilt
         context.User = claimsPrincipal;
     }
 
-    private async Task HandleInvalidToken(HttpResponse response, SecurityTokenException e)
+    public async Task HandleInvalidToken(HttpResponse response, SecurityTokenException e)
     {
         response.StatusCode = StatusCodes.Status401Unauthorized;
         await response.WriteAsync(e.Message);

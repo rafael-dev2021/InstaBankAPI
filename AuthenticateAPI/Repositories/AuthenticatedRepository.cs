@@ -80,12 +80,7 @@ public class AuthenticatedRepository(
         var user = await userManager.FindByEmailAsync(userEmail);
         return user ?? null;
     }
-    
-    public async Task<User?> GetUserIdProfileAsync(string userId)
-    {
-        var user = await userManager.FindByIdAsync(userId);
-        return user ?? null;
-    }
+
 
     public async Task<bool> ForgotPasswordAsync(string email, string newPassword)
     {

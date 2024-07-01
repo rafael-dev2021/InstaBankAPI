@@ -64,7 +64,7 @@ public class AuthenticateService(
         return tokenResponse;
     }
 
-    public async Task<TokenDtoResponse> UpdateUserDtoAsync(UpdateUserDtoRequest request, string userId)
+    public async Task<TokenDtoResponse> UpdateAsync(UpdateUserDtoRequest request, string userId)
     {
         logger.LogInformation("UpdateAsync called for userId: {UserId}", userId);
 
@@ -86,26 +86,21 @@ public class AuthenticateService(
         return tokenResponse;
     }
 
-    public async Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest request, string userId)
+    public async Task<bool> ChangePasswordAsync(ChangePasswordDtoRequest request)
     {
-        logger.LogInformation("ChangePasswordAsync called for userId: {UserId}", userId);
+        logger.LogInformation("ChangePasswordAsync called for email: {Email}", request.Email);
 
-        var user = await repository.GetUserIdProfileAsync(userId);
-        if (user == null)
+        var result = await repository.ChangePasswordAsync(request);
+        if (result)
         {
-            logger.LogWarning("User not found for userId: {UserId}", userId);
-            throw new UnauthorizedAccessException("User not found");
+            logger.LogInformation("Password change successful for email: {Email}", request.Email);
+        }
+        else
+        {
+            logger.LogWarning("Password change failed for email: {Email}", request.Email);
         }
 
-        if (user.Email != request.Email)
-        {
-            logger.LogWarning("Unauthorized attempt to change password for email: {Email}", request.Email);
-            throw new UnauthorizedAccessException("Unauthorized attempt to change password");
-        }
-
-        var changePasswordResult = await repository.ChangePasswordAsync(request);
-
-        return changePasswordResult;
+        return result;
     }
 
     public Task LogoutAsync()
@@ -165,10 +160,7 @@ public class AuthenticateService(
             throw new Exception("Internal server error while processing token refresh request", ex);
         }
     }
-
-    public async Task<bool> RevokedTokenAsync(string token) =>
-        await tokenManagerService.RevokedTokenAsync(token);
-
-    public async Task<bool> ExpiredTokenAsync(string token) =>
-        await tokenManagerService.ExpiredTokenAsync(token);
+    
+    public async Task<bool> RevokeTokenAsync(string token) =>
+        await tokenManagerService.RevokeTokenAsync(token);
 }

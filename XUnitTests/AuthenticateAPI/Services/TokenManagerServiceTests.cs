@@ -65,7 +65,7 @@ public class TokenManagerServiceTests
     {
         // Arrange
         var user = new User { Id = "1" };
-
+    
         var token1 = new Token();
         token1.SetId(1);
         token1.SetTokenValue("Token1");
@@ -105,7 +105,7 @@ public class TokenManagerServiceTests
         // Arrange
         var user = new User { Id = "1" };
 
-        var tokens = new List<Token>();
+        var tokens = new List<Token>(); 
 
         _tokenRepositoryMock.Setup(tr => tr.FindAllValidTokenByUser(user.Id)).ReturnsAsync(tokens);
 
@@ -163,7 +163,7 @@ public class TokenManagerServiceTests
         token.SetUser(user);
         token.SetUserId(user.Id);
 
-        _tokenRepositoryMock.Setup(tr => tr.SaveTokenAsync(It.IsAny<Token>())).ReturnsAsync((Token t) =>
+        _tokenRepositoryMock.Setup(tr => tr.SaveTokenAsync(It.IsAny<Token>())).ReturnsAsync((Token t) => 
         {
             t.SetUserId(user.Id);
             return t;
@@ -178,81 +178,5 @@ public class TokenManagerServiceTests
         Assert.Equal(user.Id, result.UserId);
 
         _tokenRepositoryMock.Verify(tr => tr.SaveTokenAsync(It.IsAny<Token>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task RevokedTokenAsync_ShouldReturnTrue_WhenTokenIsRevoked()
-    {
-        // Arrange
-        const string tokenValue = "revokedToken";
-        var revokedToken = new Token();
-        revokedToken.SetTokenValue(tokenValue);
-        revokedToken.SetTokenRevoked(true);
-
-        _tokenRepositoryMock.Setup(tr => tr.FindByTokenValue(tokenValue)).ReturnsAsync(revokedToken);
-
-        // Act
-        var result = await _tokenManagerService.RevokedTokenAsync(tokenValue);
-
-        // Assert
-        Assert.True(result);
-        _tokenRepositoryMock.Verify(tr => tr.FindByTokenValue(tokenValue), Times.Once);
-    }
-
-    [Fact]
-    public async Task RevokedTokenAsync_ShouldReturnFalse_WhenTokenIsNotRevoked()
-    {
-        // Arrange
-        const string tokenValue = "validToken";
-        var validToken = new Token();
-        validToken.SetTokenValue(tokenValue);
-        validToken.SetTokenRevoked(false);
-
-        _tokenRepositoryMock.Setup(tr => tr.FindByTokenValue(tokenValue)).ReturnsAsync(validToken);
-
-        // Act
-        var result = await _tokenManagerService.RevokedTokenAsync(tokenValue);
-
-        // Assert
-        Assert.False(result);
-        _tokenRepositoryMock.Verify(tr => tr.FindByTokenValue(tokenValue), Times.Once);
-    }
-
-    [Fact]
-    public async Task ExpiredTokenAsync_ShouldReturnTrue_WhenTokenIsExpired()
-    {
-        // Arrange
-        const string tokenValue = "expiredToken";
-        var expiredToken = new Token();
-        expiredToken.SetTokenValue(tokenValue);
-        expiredToken.SetTokenExpired(true);
-
-        _tokenRepositoryMock.Setup(tr => tr.FindByTokenValue(tokenValue)).ReturnsAsync(expiredToken);
-
-        // Act
-        var result = await _tokenManagerService.ExpiredTokenAsync(tokenValue);
-
-        // Assert
-        Assert.True(result);
-        _tokenRepositoryMock.Verify(tr => tr.FindByTokenValue(tokenValue), Times.Once);
-    }
-
-    [Fact]
-    public async Task ExpiredTokenAsync_ShouldReturnFalse_WhenTokenIsNotExpired()
-    {
-        // Arrange
-        const string tokenValue = "validToken";
-        var validToken = new Token();
-        validToken.SetTokenValue(tokenValue);
-        validToken.SetTokenExpired(false);
-
-        _tokenRepositoryMock.Setup(tr => tr.FindByTokenValue(tokenValue)).ReturnsAsync(validToken);
-
-        // Act
-        var result = await _tokenManagerService.ExpiredTokenAsync(tokenValue);
-
-        // Assert
-        Assert.False(result);
-        _tokenRepositoryMock.Verify(tr => tr.FindByTokenValue(tokenValue), Times.Once);
     }
 }

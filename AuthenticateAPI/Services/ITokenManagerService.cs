@@ -7,6 +7,5 @@ public interface ITokenManagerService
 {
     Task<TokenDtoResponse> GenerateTokenResponseAsync(User user);
     void RevokeAllUserTokens(User user); 
-    Task<bool> RevokedTokenAsync(string token);
-    Task<bool> ExpiredTokenAsync(string token);
+    Task<bool> RevokeTokenAsync(string token);
 }
