@@ -5,6 +5,8 @@ using AuthenticateAPI.Endpoints.Strategies;
 using AuthenticateAPI.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
+using Newtonsoft.Json;
 
 namespace AuthenticateAPI.Endpoints;
 
@@ -82,22 +84,24 @@ public static class MapAuthenticate
         MapGetTokenValidationEndpoint(
             app,
             "/v1/auth/revoked-token",
-            async
-                (service, token) =>
+            async (service, token) =>
             {
                 var success = await service.RevokedTokenAsync(token);
-                return Results.Ok(success);
-            });
+                return success;
+            },
+            "cached_revoked"
+        );
 
         MapGetTokenValidationEndpoint(
             app,
             "/v1/auth/expired-token",
-            async
-                (service, token) =>
+            async (service, token) =>
             {
                 var success = await service.ExpiredTokenAsync(token);
-                return Results.Ok(success);
-            });
+                return success;
+            },
+            "cached_expired"
+        );
     }
 
     private static void MapGetUsersEndpoint<T>(
@@ -107,19 +111,35 @@ public static class MapAuthenticate
     {
         app.MapGet(route, async (
             [FromServices] IAuthenticateService service,
+            [FromServices] IDistributedCache cache,
             HttpContext context) =>
         {
             try
             {
-                var authResult =
-                    AuthenticationRules.CheckAdminRole(context);
+                var authResult = AuthenticationRules.CheckAdminRole(context);
                 if (authResult != null)
                 {
                     return authResult;
                 }
 
-                var result = await handler(service);
-                return Results.Ok(result);
+                const string cacheKey = "cached_users";
+
+                var cachedUsers = await cache.GetStringAsync(cacheKey);
+                if (!string.IsNullOrEmpty(cachedUsers))
+                {
+                    var usersDeserializers = JsonConvert.DeserializeObject<IEnumerable<UserDtoResponse>>(cachedUsers);
+                    return Results.Ok(usersDeserializers);
+                }
+
+                var usersDto = await handler(service);
+                var serializedUsers = JsonConvert.SerializeObject(usersDto);
+
+                await cache.SetStringAsync(cacheKey, serializedUsers, new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                });
+
+                return Results.Ok(usersDto);
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -131,14 +151,33 @@ public static class MapAuthenticate
     private static void MapGetTokenValidationEndpoint(
         WebApplication app,
         string route,
-        Func<IAuthenticateService, string, Task<IResult>> handler)
+        Func<IAuthenticateService, string, Task<bool>> handler,
+        string cacheKeyPrefix)
     {
         app.MapGet(route, async (
             [FromServices] IAuthenticateService service,
+            [FromServices] IDistributedCache cache,
             [FromQuery] string token) =>
         {
-            var result = await handler(service, token);
-            return result;
+            var cacheKey = $"{cacheKeyPrefix}_{token}";
+
+            var cachedResult = await cache.GetStringAsync(cacheKey);
+            if (!string.IsNullOrEmpty(cachedResult))
+            {
+                var resultCached = JsonConvert.DeserializeObject<ApiTokensDtoResponse>(cachedResult);
+                return Results.Ok(resultCached!.Success);
+            }
+
+            var success = await handler(service, token);
+            var apiTokensDtoResponse = new ApiTokensDtoResponse(success);
+
+            var serializedResult = JsonConvert.SerializeObject(apiTokensDtoResponse);
+            await cache.SetStringAsync(cacheKey, serializedResult, new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+            });
+
+            return Results.Ok(success);
         }).RequireAuthorization();
     }
 
@@ -150,7 +189,8 @@ public static class MapAuthenticate
         app.MapPost(route, async (
             [FromServices] IAuthenticateService service,
             [FromBody] T request,
-            [FromServices] IValidator<T> validator) =>
+            [FromServices] IValidator<T> validator,
+            [FromServices] IDistributedCache cache) =>
         {
             try
             {
@@ -159,6 +199,8 @@ public static class MapAuthenticate
                 {
                     return validationResult;
                 }
+
+                await cache.RemoveAsync("cached_users");
 
                 var result = await handler(service, request);
                 return result;
@@ -177,10 +219,13 @@ public static class MapAuthenticate
     {
         app.MapPost(route, async (
             [FromServices] IAuthenticateService service,
+            [FromServices] IDistributedCache cache,
             [FromBody] T request) =>
         {
             try
             {
+                await cache.RemoveAsync("cached_users");
+                
                 var result = await handler(service, request);
                 return result;
             }
@@ -222,6 +267,7 @@ public static class MapAuthenticate
             [FromServices] IAuthenticateService service,
             [FromBody] T request,
             HttpContext context,
+            [FromServices] IDistributedCache cache,
             [FromServices] IValidator<T> validator) =>
         {
             try
@@ -237,7 +283,8 @@ public static class MapAuthenticate
                 {
                     return Results.Unauthorized();
                 }
-
+                await cache.RemoveAsync("cached_users");
+                
                 return await handler(service, request, userId);
             }
             catch (UnauthorizedAccessException ex)
