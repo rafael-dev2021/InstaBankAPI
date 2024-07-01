@@ -1,21 +1,21 @@
 ﻿services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: sqlserver
+    container_name: sqlserver_authenticateAPI
     environment:
       - SA_PASSWORD=${DB_PASSWORD}
       - ACCEPT_EULA=Y
     ports:
       - "1433:1433"
     volumes:
-      - sqlserver_data:/var/opt/mssql
+      - sqlserver_authenticateAPI_data:/var/opt/mssql
     networks:
-      - sqlnetwork
+      - authenticateAPI_network
     env_file:
-      - .env 
+      - .env
 
 volumes:
-  sqlserver_data:
+  sqlserver_authenticateAPI_data:
 
 networks:
-  sqlnetwork:
+  authenticateAPI_network:
