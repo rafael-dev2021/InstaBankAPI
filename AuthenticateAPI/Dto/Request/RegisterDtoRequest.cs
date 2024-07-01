@@ -6,6 +6,5 @@ public record RegisterDtoRequest(
     string? PhoneNumber,
     string Cpf,
     string? Email,
-    string? Role,
     string Password,
     string? ConfirmPassword);

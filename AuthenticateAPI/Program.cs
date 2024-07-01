@@ -1,7 +1,6 @@
 using AuthenticateAPI.Endpoints;
 using AuthenticateAPI.Extensions;
 using AuthenticateAPI.Middleware;
-using AuthenticateAPI.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,17 +19,17 @@ if (app.Environment.IsDevelopment())
 
 await UserRolesData.AddUserRolesDataAsync(app);
 
+app.UseCors("CorsPolicy");
+
+app.UseMiddleware<SecurityFilterMiddleware>();
+app.UseMiddleware<LogoutHandlerMiddleware>();
+app.UseMiddleware<LoggingMiddleware>();
+
 app.UseHttpsRedirection();
 app.UseRouting();
 
-app.UseCors("CorsPolicy");
-
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseMiddleware<LogoutHandlerMiddleware>();
-app.UseMiddleware<SecurityFilterMiddleware>();
-app.UseMiddleware<LoggingMiddleware>();
 
 app.MapAuthenticateEndpoints();
 
