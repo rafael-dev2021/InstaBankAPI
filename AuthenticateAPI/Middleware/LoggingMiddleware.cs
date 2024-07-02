@@ -1,9 +1,10 @@
 ﻿using System.Diagnostics;
 using System.Text;
+using Serilog;
 
 namespace AuthenticateAPI.Middleware;
 
-public class LoggingMiddleware(RequestDelegate next, ILogger<LoggingMiddleware> logger)
+public class LoggingMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -12,17 +13,17 @@ public class LoggingMiddleware(RequestDelegate next, ILogger<LoggingMiddleware> 
 
         try
         {
-            await LogAuditEvent(context.Request, context.Response, logger);
+            await LogAuditEvent(context.Request, context.Response);
             await next(context);
         }
         finally
         {
             stopwatch.Stop();
-            logger.LogInformation("Request Duration: {Duration}ms", stopwatch.ElapsedMilliseconds);
+            Log.Information("Request Duration: [{Duration}]ms", stopwatch.ElapsedMilliseconds);
         }
     }
 
-    public static async Task LogAuditEvent(HttpRequest request, HttpResponse response, ILogger logger)
+    public static async Task LogAuditEvent(HttpRequest request, HttpResponse response)
     {
         var requestBody = await GetRequestBodyAsync(request);
 
@@ -41,10 +42,10 @@ public class LoggingMiddleware(RequestDelegate next, ILogger<LoggingMiddleware> 
             response.StatusCode,
         };
 
-        logger.LogInformation(
-            "Audit Event: {RequestMethod} {RequestPath}{QueryString} - UserAgent: {UserAgent} - Status {StatusCode}",
+        Log.Information(
+            "Audit Event: [{RequestMethod}] - [{RequestPath}{QueryString}] - UserAgent: [{UserAgent}] - Status [{StatusCode}]",
             requestInfo.RequestMethod, requestInfo.RequestPath, requestInfo.QueryString, requestInfo.UserAgent, responseInfo.StatusCode);
-        logger.LogInformation("Request Body: {RequestBody}", requestInfo.RequestBody);
+        Log.Information("Request Body: [{RequestBody}]", requestInfo.RequestBody ?? "No body");
     }
 
     public static async Task<string> GetRequestBodyAsync(HttpRequest request)

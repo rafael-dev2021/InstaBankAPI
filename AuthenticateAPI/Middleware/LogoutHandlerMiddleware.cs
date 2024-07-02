@@ -1,10 +1,11 @@
 ﻿using AuthenticateAPI.Models;
 using AuthenticateAPI.Repositories.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Serilog;
 
 namespace AuthenticateAPI.Middleware;
  
-public class LogoutHandlerMiddleware(RequestDelegate next, ILogger<LogoutHandlerMiddleware> logger)
+public class LogoutHandlerMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context, IServiceProvider serviceProvider)
     {
@@ -21,7 +22,7 @@ public class LogoutHandlerMiddleware(RequestDelegate next, ILogger<LogoutHandler
         }
     }
 
-    private async Task LogoutAsync(HttpContext context, ITokenRepository tokenRepository, SignInManager<User> signInManager)
+    private static async Task LogoutAsync(HttpContext context, ITokenRepository tokenRepository, SignInManager<User> signInManager)
     {
         var token = RecoverTokenFromRequest(context.Request);
 
@@ -36,11 +37,11 @@ public class LogoutHandlerMiddleware(RequestDelegate next, ILogger<LogoutHandler
                 await signInManager.SignOutAsync();
                 context.Response.StatusCode = StatusCodes.Status200OK;
                 await context.Response.WriteAsync("Logout successful");
-                logger.LogInformation("[LOGOUT_SUCCESS] User logged out successfully. Token invalidated: {Token}", token);
+                Log.Information("[LOGOUT_SUCCESS] User logged out successfully. Token invalidated: [{Token}]", token);
             }
             else
             {
-                logger.LogError("[TOKEN_EXPIRED] Token not found during logout: {Token}", token);
+                Log.Error("[TOKEN_EXPIRED] Token not found during logout: [{Token}]", token);
                 await SendUnauthorizedResponse(context.Response);
             }
         }
@@ -50,16 +51,16 @@ public class LogoutHandlerMiddleware(RequestDelegate next, ILogger<LogoutHandler
         }
     }
 
-    private string? RecoverTokenFromRequest(HttpRequest request)
+    private static string? RecoverTokenFromRequest(HttpRequest request)
     {
         if (request.Headers.TryGetValue("Authorization", out var authHeader))
         {
             var token = authHeader.ToString().Replace("Bearer ", string.Empty);
-            logger.LogDebug("[RECOVERED] Token recovered from Authorization header: {Token}", token);
+            Log.Debug("[RECOVERED] Token recovered from Authorization header: [{Token}]", token);
             return token;
         }
 
-        logger.LogDebug("[NO_AUTH_HEADER] No Authorization header found in the request.");
+        Log.Debug("[NO_AUTH_HEADER] No Authorization header found in the request.");
         return null;
     }
 
