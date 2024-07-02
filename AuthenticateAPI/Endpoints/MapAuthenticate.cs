@@ -17,7 +17,7 @@ public static class MapAuthenticate
         MapGetUsersEndpoint<IEnumerable<UserDtoResponse>>(
             app,
             "/v1/auth/users",
-            async service => await service.GetAllUsersDtoAsync()
+            async service => await service.GetAllUsersServiceAsync()
         );
 
         MapPostUnauthorizedEndpoint<LoginDtoRequest>(
@@ -25,7 +25,7 @@ public static class MapAuthenticate
             "/v1/auth/login",
             async (service, request) =>
             {
-                var response = await service.LoginAsync(request);
+                var response = await service.LoginServiceAsync(request);
                 return Results.Ok(response);
             });
 
@@ -34,7 +34,7 @@ public static class MapAuthenticate
             "/v1/auth/register",
             async (service, request) =>
             {
-                var response = await service.RegisterAsync(request);
+                var response = await service.RegisterServiceAsync(request);
                 return Results.Created($"/v1/auth/users/{request.Email}", response);
             }
         );
@@ -44,7 +44,7 @@ public static class MapAuthenticate
             "/v1/auth/forgot-password",
             async (service, request) =>
             {
-                var success = await service.ForgotPasswordAsync(request.Email!, request.NewPassword!);
+                var success = await service.ForgotPasswordServiceAsync(request.Email!, request.NewPassword!);
                 return Results.Ok(success);
             }
         );
@@ -54,7 +54,7 @@ public static class MapAuthenticate
             "/v1/auth/logout",
             async service =>
             {
-                await service.LogoutAsync();
+                await service.LogoutServiceAsync();
                 return null!;
             },
             expectedStatusCode: StatusCodes.Status204NoContent
@@ -63,13 +63,13 @@ public static class MapAuthenticate
         MapPutAuthorizedEndpoint<UpdateUserDtoRequest>(
             app,
             "/v1/auth/update-profile",
-            async (service, request, userId) => await service.UpdateUserDtoAsync(request, userId)
+            async (service, request, userId) => await service.UpdateUserServiceAsync(request, userId)
         );
 
         MapPutAuthorizedEndpoint<ChangePasswordDtoRequest>(
             app,
             "/v1/auth/change-password",
-            async (service, request, userId) => await service.ChangePasswordAsync(request, userId)
+            async (service, request, userId) => await service.ChangePasswordServiceAsync(request, userId)
         );
 
         MapPostAuthorizeEndpoint<RefreshTokenDtoRequest>(
@@ -77,7 +77,7 @@ public static class MapAuthenticate
             "/v1/auth/refresh-token",
             async (service, request) =>
             {
-                var success = await service.RefreshTokenAsync(request);
+                var success = await service.RefreshTokenServiceAsync(request);
                 return Results.Ok(success);
             });
 
@@ -86,7 +86,7 @@ public static class MapAuthenticate
             "/v1/auth/revoked-token",
             async (service, token) =>
             {
-                var success = await service.RevokedTokenAsync(token);
+                var success = await service.RevokedTokenServiceAsync(token);
                 return success;
             },
             "cached_revoked"
@@ -97,7 +97,7 @@ public static class MapAuthenticate
             "/v1/auth/expired-token",
             async (service, token) =>
             {
-                var success = await service.ExpiredTokenAsync(token);
+                var success = await service.ExpiredTokenServiceAsync(token);
                 return success;
             },
             "cached_expired"
