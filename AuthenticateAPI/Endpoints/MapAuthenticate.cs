@@ -12,6 +12,8 @@ namespace AuthenticateAPI.Endpoints;
 
 public static class MapAuthenticate
 {
+    private const string CacheKey = "cached_users";
+
     public static void MapAuthenticateEndpoints(this WebApplication app)
     {
         MapGetUsersEndpoint<IEnumerable<UserDtoResponse>>(
@@ -122,9 +124,7 @@ public static class MapAuthenticate
                     return authResult;
                 }
 
-                const string cacheKey = "cached_users";
-
-                var cachedUsers = await cache.GetStringAsync(cacheKey);
+                var cachedUsers = await cache.GetStringAsync(CacheKey);
                 if (!string.IsNullOrEmpty(cachedUsers))
                 {
                     var usersDeserializers = JsonConvert.DeserializeObject<IEnumerable<UserDtoResponse>>(cachedUsers);
@@ -134,7 +134,7 @@ public static class MapAuthenticate
                 var usersDto = await handler(service);
                 var serializedUsers = JsonConvert.SerializeObject(usersDto);
 
-                await cache.SetStringAsync(cacheKey, serializedUsers, new DistributedCacheEntryOptions
+                await cache.SetStringAsync(CacheKey, serializedUsers, new DistributedCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
                 });
@@ -200,7 +200,7 @@ public static class MapAuthenticate
                     return validationResult;
                 }
 
-                await cache.RemoveAsync("cached_users");
+                await cache.RemoveAsync(CacheKey);
 
                 var result = await handler(service, request);
                 return result;
@@ -224,8 +224,8 @@ public static class MapAuthenticate
         {
             try
             {
-                await cache.RemoveAsync("cached_users");
-                
+                await cache.RemoveAsync(CacheKey);
+
                 var result = await handler(service, request);
                 return result;
             }
@@ -283,8 +283,9 @@ public static class MapAuthenticate
                 {
                     return Results.Unauthorized();
                 }
-                await cache.RemoveAsync("cached_users");
-                
+
+                await cache.RemoveAsync(CacheKey);
+
                 return await handler(service, request, userId);
             }
             catch (UnauthorizedAccessException ex)
