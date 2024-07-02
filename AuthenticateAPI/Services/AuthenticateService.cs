@@ -15,6 +15,9 @@ public class AuthenticateService(
     IMapper mapper,
     ITokenManagerService tokenManagerService) : IAuthenticateService
 {
+    private const string Succeeded = "succeeded";
+    private const string Failed = "failed";
+
     public async Task<IEnumerable<UserDtoResponse>> GetAllUsersServiceAsync()
     {
         Log.Information("[USERS] Fetching all users DTOs.");
@@ -24,11 +27,11 @@ public class AuthenticateService(
         if (enumerable.Length == 0)
         {
             Log.Information("[USERS] No users found.");
-            return Enumerable.Empty<UserDtoResponse>();
+            return [];
         }
 
         var mappedUsers = mapper.Map<IEnumerable<UserDtoResponse>>(usersDto);
-        Log.Information("[USERS] Successfully fetched and mapped [{UserCount}] users.", enumerable.Count());
+        Log.Information("[USERS] Successfully fetched and mapped [{UserCount}] users.", enumerable.Length);
         return mappedUsers;
     }
 
@@ -110,7 +113,7 @@ public class AuthenticateService(
 
         var changePasswordResult = await repository.ChangePasswordAsync(request);
         Log.Information("[CHANGE_PASSWORD] Password change [{Result}] for userId: [{UserId}]",
-            changePasswordResult ? "succeeded" : "failed", userId);
+            changePasswordResult ? Succeeded : Failed, userId);
         return changePasswordResult;
     }
 
@@ -128,7 +131,7 @@ public class AuthenticateService(
 
         var result = await repository.ForgotPasswordAsync(email, newPassword);
         Log.Information("[FORGOT_PASSWORD] Forgot password process [{Result}] for email: [{Email}]",
-            result ? "succeeded" : "failed",
+            result ? Succeeded : Failed,
             email);
         return result;
     }
@@ -153,7 +156,7 @@ public class AuthenticateService(
         catch (Exception ex)
         {
             Log.Error(ex, "[REFRESH_TOKEN] Error processing token refresh request.");
-            throw;
+            throw new Exception("[REFRESH_TOKEN] Error processing token refresh request.", ex);
         }
     }
 
@@ -161,7 +164,7 @@ public class AuthenticateService(
     {
         Log.Information("[REVOKED_TOKEN] Attempting to revoke token.");
         var result = await tokenManagerService.RevokedTokenAsync(token);
-        Log.Information("[REVOKED_TOKEN] Token revoke [{Result}]", result ? "succeeded" : "failed");
+        Log.Information("[REVOKED_TOKEN] Token revoke [{Result}]", result ? Succeeded : Failed);
         return result;
     }
 
@@ -169,7 +172,7 @@ public class AuthenticateService(
     {
         Log.Information("[EXPIRED_TOKEN] Attempting to expire token.");
         var result = await tokenManagerService.ExpiredTokenAsync(token);
-        Log.Information("[EXPIRED_TOKEN] Token expire [{Result}]", result ? "succeeded" : "failed");
+        Log.Information("[EXPIRED_TOKEN] Token expire [{Result}]", result ? Succeeded : Failed);
         return result;
     }
 

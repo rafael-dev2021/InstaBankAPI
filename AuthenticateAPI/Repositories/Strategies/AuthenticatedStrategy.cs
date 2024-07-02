@@ -58,7 +58,7 @@ public class AuthenticatedStrategy(SignInManager<User> signInManager, IDistribut
         catch (Exception ex)
         {
             Log.Error(ex, "[CACHE] Error retrieving login attempts for cache key [{CacheKey}]", cacheKey);
-            throw;
+            throw new Exception($"[CACHE] Error retrieving login attempts for cache key [{cacheKey}]", ex);
         }
     }
 
@@ -79,7 +79,7 @@ public class AuthenticatedStrategy(SignInManager<User> signInManager, IDistribut
         catch (Exception ex)
         {
             Log.Error(ex, "[CACHE] Error incrementing login attempts for cache key [{CacheKey}]", cacheKey);
-            throw;
+            throw new Exception($"[CACHE] Error incrementing login attempts for cache key [{cacheKey}]", ex);
         }
     }
 
@@ -93,7 +93,7 @@ public class AuthenticatedStrategy(SignInManager<User> signInManager, IDistribut
         catch (Exception ex)
         {
             Log.Error(ex, "[CACHE] Error resetting login attempts for cache key [{CacheKey}]", cacheKey);
-            throw;
+            throw new Exception($"[CACHE] Error resetting login attempts for cache key [{cacheKey}]", ex);
         }
     }
 }
