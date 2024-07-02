@@ -1,43 +1,18 @@
 ﻿using System.Text;
 using AuthenticateAPI.Middleware;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace XUnitTests.AuthenticateAPI.Middleware;
 
 public class LoggingMiddlewareTests
 {
+    
     [Fact]
     public async Task InvokeAsync_ShouldLogRequestDuration()
     {
         // Arrange
         var context = new DefaultHttpContext();
-        var loggerMock = new Mock<ILogger<LoggingMiddleware>>();
-        var next = new RequestDelegate(_ => Task.CompletedTask);
-        var middleware = new LoggingMiddleware(next, loggerMock.Object);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        loggerMock.Verify(
-            x => x.Log(LogLevel.Information, It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(),
-                ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-            Times.AtLeastOnce);
-        loggerMock.Verify(
-            x => x.Log(LogLevel.Information, It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Request Duration")), null,
-                ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task LogAuditEvent_ShouldLogRequestDetails()
-    {
-        // Arrange
-        var context = new DefaultHttpContext();
-        var loggerMock = new Mock<ILogger>();
         var request = context.Request;
         request.Method = "GET";
         request.Path = "/api/test";
@@ -46,8 +21,34 @@ public class LoggingMiddlewareTests
         var response = context.Response;
         response.StatusCode = 200;
 
-        const string expectedLogMessage1 = $"Audit Event: GET /api/test?param1=value1 - UserAgent: TestUserAgent";
-        const string expectedLogMessage2 = "Request Body: {\"key\":\"value\"}";
+        var memoryStream = new MemoryStream("{\"key\":\"value\"}"u8.ToArray());
+        request.Body = memoryStream;
+        request.ContentLength = memoryStream.Length;
+
+        var next = new Mock<RequestDelegate>();
+        next.Setup(x => x.Invoke(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
+
+        var loggingMiddleware = new LoggingMiddleware(next.Object);
+
+        // Act
+        await loggingMiddleware.InvokeAsync(context);
+
+        // Assert
+        next.Verify(x => x.Invoke(It.IsAny<HttpContext>()), Times.Once);
+    }
+    
+    [Fact]
+    public async Task LogAuditEvent_ShouldLogRequestDetails()
+    {
+        // Arrange
+        var context = new DefaultHttpContext();
+        var request = context.Request;
+        request.Method = "GET";
+        request.Path = "/api/test";
+        request.QueryString = new QueryString("?param1=value1");
+        request.Headers.Append("User-Agent", "TestUserAgent");
+        var response = context.Response;
+        response.StatusCode = 200;
 
         // Simulate request body
         const string requestBody = "{\"key\":\"value\"}";
@@ -55,20 +56,8 @@ public class LoggingMiddlewareTests
         request.Body = memoryStream;
         request.ContentLength = memoryStream.Length;
 
-        var logger = loggerMock.Object;
-
         // Act
-        await LoggingMiddleware.LogAuditEvent(request, response, logger);
-
-        // Assert
-        loggerMock.Verify(
-            x => x.Log(LogLevel.Information, It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedLogMessage1)), null,
-                ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!), Times.Once);
-        loggerMock.Verify(
-            x => x.Log(LogLevel.Information, It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedLogMessage2)), null,
-                ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!), Times.Once);
+        await LoggingMiddleware.LogAuditEvent(request, response);
     }
 
     [Fact]

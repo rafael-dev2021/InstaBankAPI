@@ -3,14 +3,12 @@ using AuthenticateAPI.Models;
 using AuthenticateAPI.Repositories.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace XUnitTests.AuthenticateAPI.Middleware;
 
 public class LogoutHandlerMiddlewareTests
 {
-    private readonly Mock<ILogger<LogoutHandlerMiddleware>> _loggerMock = new();
     private readonly Mock<ITokenRepository> _tokenRepositoryMock = new();
     private readonly Mock<SignInManager<User>> _signInManagerMock;
     private readonly Mock<RequestDelegate> _nextMock = new();
@@ -64,7 +62,7 @@ public class LogoutHandlerMiddlewareTests
         _tokenRepositoryMock.Setup(repo => repo.FindByTokenValue("validToken"))
             .ReturnsAsync(validToken);
 
-        var handler = new LogoutHandlerMiddleware(_nextMock.Object, _loggerMock.Object);
+        var handler = new LogoutHandlerMiddleware(_nextMock.Object);
 
         // Act
         await handler.InvokeAsync(context, serviceProviderMock.Object);
@@ -101,7 +99,7 @@ public class LogoutHandlerMiddlewareTests
         _tokenRepositoryMock.Setup(repo => repo.FindByTokenValue("invalidToken"))
             .ReturnsAsync((Token)null!);
 
-        var handler = new LogoutHandlerMiddleware(_nextMock.Object, _loggerMock.Object);
+        var handler = new LogoutHandlerMiddleware(_nextMock.Object);
 
         // Act
         await handler.InvokeAsync(context, serviceProviderMock.Object);
@@ -125,7 +123,7 @@ public class LogoutHandlerMiddlewareTests
             }
         };
 
-        var handler = new LogoutHandlerMiddleware(_nextMock.Object, _loggerMock.Object);
+        var handler = new LogoutHandlerMiddleware(_nextMock.Object);
 
         // Act
         await handler.InvokeAsync(context, Mock.Of<IServiceProvider>());
@@ -152,7 +150,7 @@ public class LogoutHandlerMiddlewareTests
         serviceProviderMock.Setup(sp => sp.GetService(typeof(SignInManager<User>)))
             .Returns(_signInManagerMock.Object);
 
-        var handler = new LogoutHandlerMiddleware(_nextMock.Object, _loggerMock.Object);
+        var handler = new LogoutHandlerMiddleware(_nextMock.Object);
 
         // Act
         await handler.InvokeAsync(context, serviceProviderMock.Object);
@@ -162,13 +160,5 @@ public class LogoutHandlerMiddlewareTests
         _tokenRepositoryMock.Verify(repo => repo.SaveAsync(), Times.Never);
         _signInManagerMock.Verify(manager => manager.SignOutAsync(), Times.Never);
         Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
-        _loggerMock.Verify(logger => logger.Log(
-            LogLevel.Debug,
-            It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((v, t) =>
-                v.ToString()!.Contains("[NO_AUTH_HEADER] No Authorization header found in the request.")),
-            null,
-            It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-        ));
     }
 }

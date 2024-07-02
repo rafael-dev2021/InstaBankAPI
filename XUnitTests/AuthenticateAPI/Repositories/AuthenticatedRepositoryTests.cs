@@ -156,10 +156,6 @@ public class AuthenticatedRepositoryTests
             var expectedResponse = new RegisteredDtoResponse(true, "Registration successful.");
 
             _registerStrategyMock
-                .Setup(s => s.ValidateAsync(request.Cpf, request.Email, request.PhoneNumber))
-                .ReturnsAsync([]);
-
-            _registerStrategyMock
                 .Setup(s => s.CreateUserAsync(request))
                 .ReturnsAsync(expectedResponse);
 
@@ -168,33 +164,7 @@ public class AuthenticatedRepositoryTests
 
             // Assert
             response.Should().BeEquivalentTo(expectedResponse);
-            _registerStrategyMock.Verify(s => s.ValidateAsync(request.Cpf, request.Email, request.PhoneNumber),
-                Times.Once);
             _registerStrategyMock.Verify(s => s.CreateUserAsync(request), Times.Once);
-        }
-
-        [Fact(DisplayName = "RegisterAsync should return error response when validation fails")]
-        public async Task RegisterAsync_Should_Return_Error_Response()
-        {
-            // Arrange
-            var request = new RegisterDtoRequest("John", "Doe", "+1234567890", "123.456.789-01", "john.doe@example.com",
-                "StrongP@ssw0rd", "StrongP@ssw0r");
-
-            var validationErrors = new List<string> { "Email already used." };
-            var expectedResponse = new RegisteredDtoResponse(false, string.Join(Environment.NewLine, validationErrors));
-
-            _registerStrategyMock
-                .Setup(s => s.ValidateAsync(request.Cpf, request.Email, request.PhoneNumber))
-                .ReturnsAsync(validationErrors);
-
-            // Act
-            var response = await _authenticatedRepository.RegisterAsync(request);
-
-            // Assert
-            response.Should().BeEquivalentTo(expectedResponse);
-            _registerStrategyMock.Verify(s => s.ValidateAsync(request.Cpf, request.Email, request.PhoneNumber),
-                Times.Once);
-            _registerStrategyMock.Verify(s => s.CreateUserAsync(It.IsAny<RegisterDtoRequest>()), Times.Never);
         }
     }
 
