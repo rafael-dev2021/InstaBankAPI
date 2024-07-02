@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
+using Serilog;
+using Serilog.Sinks.TestCorrelator;
 
 namespace XUnitTests.AuthenticateAPI.Middleware;
 
@@ -159,7 +161,7 @@ public class SecurityFilterMiddlewareTests
             Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
             _mockNext.Verify(next => next(context), Times.Never);
         }
-        
+
         [Fact]
         public async Task Should_Log_Error_On_Invocation_Failure()
         {
@@ -175,8 +177,22 @@ public class SecurityFilterMiddlewareTests
 
             _mockHttpContext.Setup(c => c.RequestServices).Returns(mockServiceProvider.Object);
 
-            // Act
-            await filter.InvokeAsync(_mockHttpContext.Object, mockServiceProvider.Object);
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.TestCorrelator()
+                .CreateLogger();
+
+            using (TestCorrelator.CreateContext())
+            {
+                // Act
+                await filter.InvokeAsync(_mockHttpContext.Object, mockServiceProvider.Object);
+
+                // Assert
+                var logEvents = TestCorrelator.GetLogEventsFromCurrentContext();
+                Assert.Contains(logEvents,
+                    logEvent => logEvent.MessageTemplate.Text.Contains(
+                        "[ERROR_FILTER] Error processing security filter"));
+                Assert.Contains(logEvents, logEvent => logEvent.Exception?.Message == exceptionMessage);
+            }
         }
     }
 
@@ -202,7 +218,7 @@ public class SecurityFilterMiddlewareTests
             Assert.NotNull(token);
             Assert.Equal("validToken", token);
         }
-        
+
         [Fact]
         public void Should_Return_Null_When_Authorization_Header_Not_Present()
         {
@@ -344,7 +360,7 @@ public class SecurityFilterMiddlewareTests
 
             var expiredToken = new Token();
             expiredToken.SetTokenValue(token);
-            expiredToken.SetTokenExpired(true); 
+            expiredToken.SetTokenExpired(true);
             expiredToken.SetTokenRevoked(false);
 
             _mockTokenService.Setup(ts => ts.ValidateToken(token)).Returns(claimsPrincipal);
@@ -374,7 +390,7 @@ public class SecurityFilterMiddlewareTests
             var revokedToken = new Token();
             revokedToken.SetTokenValue(token);
             revokedToken.SetTokenExpired(false);
-            revokedToken.SetTokenRevoked(true); 
+            revokedToken.SetTokenRevoked(true);
 
             _mockTokenService.Setup(ts => ts.ValidateToken(token)).Returns(claimsPrincipal);
             _mockUserManager.Setup(um => um.FindByEmailAsync(email)).ReturnsAsync(user);

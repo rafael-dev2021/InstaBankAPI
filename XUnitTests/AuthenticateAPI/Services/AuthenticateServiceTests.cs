@@ -345,8 +345,8 @@ public class AuthenticateServiceTests
             _tokenServiceMock.Setup(ts => ts.ValidateToken(It.IsAny<string>())).Returns((ClaimsPrincipal)null!);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authenticateService.RefreshTokenServiceAsync(request));
-            Assert.Equal("Invalid refresh token", exception.Message);
+            var exception = await Assert.ThrowsAsync<Exception>(() => _authenticateService.RefreshTokenServiceAsync(request));
+            Assert.Equal("[REFRESH_TOKEN] Error processing token refresh request.", exception.Message);
         }
 
         [Fact]
@@ -362,8 +362,8 @@ public class AuthenticateServiceTests
             _tokenServiceMock.Setup(ts => ts.ValidateToken(It.IsAny<string>())).Returns(claimsPrincipal);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authenticateService.RefreshTokenServiceAsync(request));
-            Assert.Equal("User not found", exception.Message);
+            var exception = await Assert.ThrowsAsync<Exception>(() => _authenticateService.RefreshTokenServiceAsync(request));
+            Assert.Equal("[REFRESH_TOKEN] Error processing token refresh request.", exception.Message);
         }
 
         [Fact]
@@ -379,8 +379,8 @@ public class AuthenticateServiceTests
             _repositoryMock.Setup(r => r.GetUserProfileAsync(It.IsAny<string>())).ReturnsAsync((User)null!);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authenticateService.RefreshTokenServiceAsync(request));
-            Assert.Equal("User not found", exception.Message);
+            var exception = await Assert.ThrowsAsync<Exception>(() => _authenticateService.RefreshTokenServiceAsync(request));
+            Assert.Equal("[REFRESH_TOKEN] Error processing token refresh request.", exception.Message);
         }
 
         [Fact]

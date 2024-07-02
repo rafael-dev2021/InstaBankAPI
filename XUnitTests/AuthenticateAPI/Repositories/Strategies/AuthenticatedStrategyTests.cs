@@ -111,7 +111,7 @@ public class AuthenticatedStrategyTests
     {
         // Arrange
         const string cacheKey = "login_attempts_user@example.com";
-        var exception = new Exception("Cache increment error");
+        var exception = new Exception($"[CACHE] Error incrementing login attempts for cache key [{cacheKey}]");
 
         _cacheMock.Setup(c => c.GetAsync(cacheKey, default)).ThrowsAsync(exception);
 
@@ -143,7 +143,7 @@ public class AuthenticatedStrategyTests
     {
         // Arrange
         const string cacheKey = "login_attempts_user@example.com";
-        var exception = new Exception("Cache retrieval error");
+        var exception = new Exception($"[CACHE] Error retrieving login attempts for cache key [{cacheKey}]");
 
         _cacheMock.Setup(c => c.GetAsync(cacheKey, default)).ThrowsAsync(exception);
 
@@ -171,7 +171,7 @@ public class AuthenticatedStrategyTests
     {
         // Arrange
         const string cacheKey = "login_attempts_user@example.com";
-        var exception = new Exception("Cache remove error");
+        var exception = new Exception($"[CACHE] Error resetting login attempts for cache key [{cacheKey}]");
 
         _cacheMock.Setup(c => c.RemoveAsync(cacheKey, default)).ThrowsAsync(exception);
 
