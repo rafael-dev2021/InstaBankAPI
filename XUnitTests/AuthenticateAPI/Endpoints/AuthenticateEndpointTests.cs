@@ -25,7 +25,7 @@ public class AuthenticateEndpointTests
                 new("567ds89d4", "Jane", "Doe", "jane.doe@example.com", "Admin")
             };
 
-            _authenticateServiceMock.Setup(s => s.GetAllUsersDtoAsync()).ReturnsAsync(usersDtoResponse);
+            _authenticateServiceMock.Setup(s => s.GetAllUsersServiceAsync()).ReturnsAsync(usersDtoResponse);
 
             var builder = WebApplication.CreateBuilder();
             var app = builder.Build();
@@ -34,7 +34,7 @@ public class AuthenticateEndpointTests
             // Act
             var result = await AuthenticateEndpointTestsHelper.InvokeGetEndpoint(
                 _authenticateServiceMock.Object,
-                async service => await service.GetAllUsersDtoAsync()
+                async service => await service.GetAllUsersServiceAsync()
             );
 
             // Assert

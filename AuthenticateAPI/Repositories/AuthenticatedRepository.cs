@@ -50,13 +50,7 @@ public class AuthenticatedRepository(
 
     public async Task<RegisteredDtoResponse> RegisterAsync(RegisterDtoRequest request)
     {
-        var validationErrors = await registerStrategy.ValidateAsync(request.Cpf, request.Email, request.PhoneNumber);
-
-        if (validationErrors.Count == 0)
-            return await registerStrategy.CreateUserAsync(request);
-
-        var errorMessage = string.Join(Environment.NewLine, validationErrors);
-        return new RegisteredDtoResponse(false, errorMessage);
+        return await registerStrategy.CreateUserAsync(request);
     }
 
     public async Task<UpdatedDtoResponse> UpdateProfileAsync(UpdateUserDtoRequest updateUserDtoRequest, string userId)

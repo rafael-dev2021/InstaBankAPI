@@ -3,16 +3,13 @@ using System.Security.Claims;
 using System.Text;
 using AuthenticateAPI.Models;
 using AuthenticateAPI.Security;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using Moq;
 
 namespace XUnitTests.AuthenticateAPI.Security;
 
 public class TokenServiceTests
 {
     private readonly JwtSettings _jwtSettings;
-    private readonly Mock<ILogger<TokenService>> _loggerMock;
 
     protected TokenServiceTests()
     {
@@ -24,8 +21,6 @@ public class TokenServiceTests
             ExpirationTokenMinutes = 15,
             RefreshTokenExpirationMinutes = 30
         };
-
-        _loggerMock = new Mock<ILogger<TokenService>>();
     }
     
 
@@ -35,8 +30,7 @@ public class TokenServiceTests
         public void GenerateToken_ShouldReturnValidToken()
         {
             // Arrange
-            var tokenService = new TokenService(_jwtSettings, _loggerMock.Object);
-
+            var tokenService = new TokenService(_jwtSettings);
             var user = new User
             {
                 Id = "123",
@@ -85,7 +79,7 @@ public class TokenServiceTests
         public void GenerateAccessToken_ShouldReturnValidToken()
         {
             // Arrange
-            var tokenService = new TokenService(_jwtSettings, _loggerMock.Object);
+            var tokenService = new TokenService(_jwtSettings);
 
             var user = new User
             {
@@ -134,7 +128,7 @@ public class TokenServiceTests
         public void GenerateRefreshToken_ShouldReturnValidToken()
         {
             // Arrange
-            var tokenService = new TokenService(_jwtSettings, _loggerMock.Object);
+            var tokenService = new TokenService(_jwtSettings);
 
             var user = new User
             {
@@ -183,7 +177,7 @@ public class TokenServiceTests
         public void ValidateToken_ShouldReturnPrincipalForValidToken()
         {
             // Arrange
-            var tokenService = new TokenService(_jwtSettings, _loggerMock.Object);
+            var tokenService = new TokenService(_jwtSettings);
 
             var user = new User
             {
@@ -216,7 +210,7 @@ public class TokenServiceTests
         public void ValidateToken_ShouldReturnNullForInvalidToken()
         {
             // Arrange
-            var tokenService = new TokenService(_jwtSettings, _loggerMock.Object);
+            var tokenService = new TokenService(_jwtSettings);
             const string invalidToken = "invalid_token_string";
 
             // Act

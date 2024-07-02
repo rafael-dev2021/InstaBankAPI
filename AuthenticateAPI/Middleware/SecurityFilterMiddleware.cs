@@ -5,10 +5,11 @@ using AuthenticateAPI.Repositories.Interfaces;
 using AuthenticateAPI.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 
 namespace AuthenticateAPI.Middleware;
 
-public class SecurityFilterMiddleware(RequestDelegate next, ILogger<SecurityFilterMiddleware> logger)
+public class SecurityFilterMiddleware(RequestDelegate next)
 {
     private readonly List<string> _ignorePaths =
     [
@@ -51,7 +52,7 @@ public class SecurityFilterMiddleware(RequestDelegate next, ILogger<SecurityFilt
         }
         catch (Exception e)
         {
-            logger.LogError(e, "[ERROR_FILTER] Error processing security filter: {Message}", e.Message);
+            Log.Error(e, "[ERROR_FILTER] Error processing security filter: [{Message}]", e.Message);
         }
     }
 
@@ -60,11 +61,11 @@ public class SecurityFilterMiddleware(RequestDelegate next, ILogger<SecurityFilt
         if (request.Headers.TryGetValue("Authorization", out var authHeader))
         {
             var token = authHeader.ToString().Replace("Bearer ", string.Empty);
-            logger.LogInformation("[RECOVERED] Token recovered from Authorization header: {Token}", token);
+            Log.Information("[TOKEN_RECOVERED] Token recovered from Authorization header: [{Token}]", token);
             return token;
         }
 
-        logger.LogInformation("[NO_AUTH_HEADER] No Authorization header found in the request.");
+        Log.Information("[NO_AUTH_HEADER] No Authorization header found in the request.");
         return null;
     }
 
@@ -82,8 +83,8 @@ public class SecurityFilterMiddleware(RequestDelegate next, ILogger<SecurityFilt
                 if (user != null && isTokenValid)
                 {
                     SetAuthenticationInSecurityContext(context, user);
-                    logger.LogInformation(
-                        "[USER_AUTHENTICATED] User: {UserName} successfully authenticated with token: {Token}.",
+                    Log.Information(
+                        "[USER_AUTHENTICATED] User: [{UserName}] successfully authenticated with token: [{Token}]",
                         user.UserName, token);
                     return true;
                 }
@@ -100,10 +101,10 @@ public class SecurityFilterMiddleware(RequestDelegate next, ILogger<SecurityFilt
         }
     }
 
-    private void LogError(HttpContext context, string token)
+    private static void LogError(HttpContext context, string token)
     {
-        logger.LogError(
-            "[TOKEN_FAILED] User-Agent: {UserAgent}. IP Address: {IpAddress}. Validation failed for token: {Token}",
+        Log.Error(
+            "[TOKEN_FAILED] User-Agent: [{UserAgent}] IP Address: [{IpAddress}]. Validation failed for token: [{Token}]",
             GetUserAgent(context), GetIpAddress(context), token);
     }
 
@@ -135,10 +136,10 @@ public class SecurityFilterMiddleware(RequestDelegate next, ILogger<SecurityFilt
         context.User = claimsPrincipal;
     }
 
-    private async Task HandleInvalidToken(HttpResponse response, SecurityTokenException e)
+    private static async Task HandleInvalidToken(HttpResponse response, SecurityTokenException e)
     {
         response.StatusCode = StatusCodes.Status401Unauthorized;
         await response.WriteAsync(e.Message);
-        logger.LogWarning("[TOKEN_INVALID] Invalid token detected: {Message}", e.Message);
+        Log.Warning("[TOKEN_INVALID] Invalid token detected: [{Message}]", e.Message);
     }
 }

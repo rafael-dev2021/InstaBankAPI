@@ -2,14 +2,14 @@
 using AuthenticateAPI.Models;
 using AuthenticateAPI.Repositories.Interfaces;
 using AuthenticateAPI.Security;
+using Serilog;
 
 namespace AuthenticateAPI.Services;
 
 public class TokenManagerService(
     ITokenService tokenService,
     ITokenRepository tokenRepository,
-    IAuthenticatedRepository authenticatedRepository,
-    ILogger<TokenManagerService> logger) : ITokenManagerService
+    IAuthenticatedRepository authenticatedRepository) : ITokenManagerService
 {
     public async Task<TokenDtoResponse> GenerateTokenResponseAsync(User user)
     {
@@ -25,7 +25,7 @@ public class TokenManagerService(
         user.Tokens.Add(refreshTokenToken);
         await authenticatedRepository.SaveAsync(user);
 
-        logger.LogInformation("Tokens generated successfully for user {UserId}", user.Id);
+        Log.Information("[TOKENS] Tokens generated successfully for user [{UserId}]", user.Id);
 
         return new TokenDtoResponse(accessTokenToken.TokenValue!, refreshTokenToken.TokenValue!);
     }
@@ -42,7 +42,7 @@ public class TokenManagerService(
 
         tokenRepository.SaveAllTokensAsync(validUserTokens).Wait();
 
-        logger.LogInformation("All tokens revoked for user {UserId}", user.Id);
+        Log.Information("[TOKENS] All tokens revoked for user [{UserId}]", user.Id);
     }
 
     public async Task<bool> RevokedTokenAsync(string token)
@@ -62,7 +62,7 @@ public class TokenManagerService(
         var tokens = await tokenRepository.FindAllTokensByUserId(userId);
         if (tokens.Count == 0) return;
         await tokenRepository.DeleteAllTokensAsync(tokens);
-        logger.LogInformation("Cleared tokens for user {UserId}", userId);
+        Log.Information("[CLEARED TOKENS] Cleared tokens for user [{UserId}]", userId);
     }
 
     public async Task<Token> SaveUserTokenAsync(User user, string jwtToken)
@@ -76,7 +76,7 @@ public class TokenManagerService(
         token.SetUser(user);
 
         var savedToken = await tokenRepository.SaveTokenAsync(token);
-        logger.LogInformation("Token saved successfully for user {UserId}", user.Id);
+        Log.Information("[TOKENS] Token saved successfully for user [{UserId}]", user.Id);
 
         return savedToken;
     }

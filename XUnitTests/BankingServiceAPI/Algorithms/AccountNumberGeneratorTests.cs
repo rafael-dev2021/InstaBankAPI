@@ -41,16 +41,16 @@ public class AccountNumberGeneratorTests
     }
 
     [Fact]
-    public void GenerateAgencyNumberAsync_Should_Return_Valid_Agency_Number()
+    public async Task GenerateAgencyNumberAsync_Should_Return_Valid_Agency_Number()
     {
         // Arrange
         var dbContextOptions = CreateNewDbContextOptions();
 
-        using var context = new AppDbContext(dbContextOptions);
+        await using var context = new AppDbContext(dbContextOptions);
         var generator = new AccountNumberGenerator(context);
 
         // Act
-        var agencyNumber = generator.GenerateAgencyNumberAsync().Result;
+        var agencyNumber = await generator.GenerateAgencyNumberAsync();
 
         // Assert
         Assert.InRange(agencyNumber, 1000, 9999);

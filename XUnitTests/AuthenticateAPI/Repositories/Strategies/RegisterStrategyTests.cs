@@ -35,28 +35,6 @@ public class RegisterStrategyTests : IDisposable
         _registerStrategy = new RegisterStrategy(signInManagerMock.Object, _userManagerMock.Object, _appDbContext);
     }
 
-    [Fact(DisplayName = "Should return validation errors when CPF, email, and phone number are already used")]
-    public async Task ValidateAsync_Should_ReturnValidationErrors()
-    {
-        // Arrange
-        var existingUser = new User { Email = "john@example.com", PhoneNumber = "+1234567890" };
-        existingUser.SetName("Test");
-        existingUser.SetLastName("Test");
-        existingUser.SetCpf("123.456.789-10");
-        existingUser.SetRole("Admin");
-        await _appDbContext.Users.AddAsync(existingUser);
-        await _appDbContext.SaveChangesAsync();
-
-        // Act
-        var errors =
-            await _registerStrategy.ValidateAsync(existingUser.Cpf, existingUser.Email, existingUser.PhoneNumber);
-
-        // Assert
-        errors.Should().Contain("CPF already used.");
-        errors.Should().Contain("Email already used.");
-        errors.Should().Contain("Phone number already used.");
-    }
-
     [Fact(DisplayName = "Should return successful registration response")]
     public async Task CreateUserAsync_Should_Return_SuccessfulRegistrationResponse()
     {
@@ -132,7 +110,7 @@ public class RegisterStrategyTests : IDisposable
 
         // Assert
         response.Should().BeEquivalentTo(new RegisteredDtoResponse(false,
-            "CPF already used., Email already used., Phone number already used."));
+            "[CPF already used], [Email already used], [Phone number already used]"));
     }
 
     [Fact(DisplayName = "Should return error when user creation fails")]

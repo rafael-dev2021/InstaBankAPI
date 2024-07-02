@@ -2,7 +2,6 @@
 using AuthenticateAPI.Repositories.Interfaces;
 using AuthenticateAPI.Security;
 using AuthenticateAPI.Services;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace XUnitTests.AuthenticateAPI.Services;
@@ -19,13 +18,10 @@ public class TokenManagerServiceTests
         _tokenServiceMock = new Mock<ITokenService>();
         _tokenRepositoryMock = new Mock<ITokenRepository>();
         _authenticatedRepositoryMock = new Mock<IAuthenticatedRepository>();
-        Mock<ILogger<TokenManagerService>> loggerMock = new();
-
         _tokenManagerService = new TokenManagerService(
             _tokenServiceMock.Object,
             _tokenRepositoryMock.Object,
-            _authenticatedRepositoryMock.Object,
-            loggerMock.Object
+            _authenticatedRepositoryMock.Object
         );
     }
 

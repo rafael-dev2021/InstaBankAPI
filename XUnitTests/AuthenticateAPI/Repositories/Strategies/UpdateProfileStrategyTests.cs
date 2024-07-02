@@ -7,6 +7,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using Serilog;
 
 namespace XUnitTests.AuthenticateAPI.Repositories.Strategies;
 
@@ -37,18 +38,15 @@ public class UpdateProfileStrategyTests : IDisposable
         const string userId = "12345";
         var request = new UpdateUserDtoRequest("NewName", "NewLastName", "new.email@example.com", "+1234567890");
         var existingUser = new User { Id = userId, Email = "old.email@example.com", PhoneNumber = "+9876543210" };
-        existingUser.SetName("NewName");
-        existingUser.SetLastName("NewLastName");
-        existingUser.SetCpf("123.456.789-10");
+        existingUser.SetName("OldName");
+        existingUser.SetLastName("OldLastName");
         existingUser.SetRole("Admin");
-
+        
         await _appDbContext.Users.AddAsync(existingUser);
         await _appDbContext.SaveChangesAsync();
 
-        _userManagerMock.Setup(um => um.FindByIdAsync(userId))
-            .ReturnsAsync(existingUser);
-        _userManagerMock.Setup(um => um.UpdateAsync(It.IsAny<User>()))
-            .ReturnsAsync(IdentityResult.Success);
+        _userManagerMock.Setup(um => um.FindByIdAsync(userId)).ReturnsAsync(existingUser);
+        _userManagerMock.Setup(um => um.UpdateAsync(It.IsAny<User>())).ReturnsAsync(IdentityResult.Success);
 
         // Act
         var response = await _updateProfileStrategy.UpdateProfileAsync(request, userId);
@@ -65,34 +63,21 @@ public class UpdateProfileStrategyTests : IDisposable
         const string userId = "12345";
         var request = new UpdateUserDtoRequest("NewName", "NewLastName", "existing.email@example.com", "+9876543210");
 
-        var existingUser = new User
-        {
-            Id = userId,
-            Email = "old.email@example.com",
-            PhoneNumber = "+1234567890"
-        };
+        var existingUser = new User { Id = userId, Email = "old.email@example.com", PhoneNumber = "+1234567890" };
         existingUser.SetName("ExistingName");
         existingUser.SetLastName("ExistingLastName");
-        existingUser.SetCpf("123.456.789-10");
-        existingUser.SetRole("Admin"); 
-
-        var anotherUser = new User
-        {
-            Id = "54321",
-            Email = "existing.email@example.com",
-            PhoneNumber = "+9876543210"
-        };
+        existingUser.SetRole("Admin");
+        
+        var anotherUser = new User { Id = "54321", Email = "existing.email@example.com", PhoneNumber = "+9876543210" };
         anotherUser.SetName("AnotherName");
         anotherUser.SetLastName("AnotherLastName");
-        anotherUser.SetCpf("987.654.321-00");
-        anotherUser.SetRole("Admin"); 
-
+        anotherUser.SetRole("Admin");
+        
         await _appDbContext.Users.AddAsync(existingUser);
         await _appDbContext.Users.AddAsync(anotherUser);
         await _appDbContext.SaveChangesAsync();
 
-        _userManagerMock.Setup(um => um.FindByIdAsync(userId))
-            .ReturnsAsync(existingUser);
+        _userManagerMock.Setup(um => um.FindByIdAsync(userId)).ReturnsAsync(existingUser);
 
         // Act
         var response = await _updateProfileStrategy.UpdateProfileAsync(request, userId);
@@ -111,23 +96,16 @@ public class UpdateProfileStrategyTests : IDisposable
         const string userId = "12345";
         var request = new UpdateUserDtoRequest("NewName", "NewLastName", "old.email@example.com", "+1234567890");
 
-        var existingUser = new User
-        {
-            Id = userId,
-            Email = "old.email@example.com",
-            PhoneNumber = "+1234567890",
-        };
+        var existingUser = new User { Id = userId, Email = "old.email@example.com", PhoneNumber = "+1234567890" };
         existingUser.SetName("OldName");
         existingUser.SetLastName("OldLastName");
         existingUser.SetRole("Admin");
-
+        
         await _appDbContext.Users.AddAsync(existingUser);
         await _appDbContext.SaveChangesAsync();
 
-        _userManagerMock.Setup(um => um.FindByIdAsync(userId))
-            .ReturnsAsync(existingUser);
-        _userManagerMock.Setup(um => um.UpdateAsync(It.IsAny<User>()))
-            .ReturnsAsync(IdentityResult.Success);
+        _userManagerMock.Setup(um => um.FindByIdAsync(userId)).ReturnsAsync(existingUser);
+        _userManagerMock.Setup(um => um.UpdateAsync(It.IsAny<User>())).ReturnsAsync(IdentityResult.Success);
 
         // Act
         var response = await _updateProfileStrategy.UpdateProfileAsync(request, userId);
@@ -146,23 +124,16 @@ public class UpdateProfileStrategyTests : IDisposable
         const string userId = "12345";
         var request = new UpdateUserDtoRequest(null, null, "old.email@example.com", "+1234567890");
 
-        var existingUser = new User
-        {
-            Id = userId,
-            Email = "old.email@example.com",
-            PhoneNumber = "+1234567890",
-        };
+        var existingUser = new User { Id = userId, Email = "old.email@example.com", PhoneNumber = "+1234567890" };
         existingUser.SetName("OldName");
         existingUser.SetLastName("OldLastName");
-        existingUser.SetRole("Admin");
-
+        existingUser.SetRole("user");
+        
         await _appDbContext.Users.AddAsync(existingUser);
         await _appDbContext.SaveChangesAsync();
 
-        _userManagerMock.Setup(um => um.FindByIdAsync(userId))
-            .ReturnsAsync(existingUser);
-        _userManagerMock.Setup(um => um.UpdateAsync(It.IsAny<User>()))
-            .ReturnsAsync(IdentityResult.Success);
+        _userManagerMock.Setup(um => um.FindByIdAsync(userId)).ReturnsAsync(existingUser);
+        _userManagerMock.Setup(um => um.UpdateAsync(It.IsAny<User>())).ReturnsAsync(IdentityResult.Success);
 
         // Act
         var response = await _updateProfileStrategy.UpdateProfileAsync(request, userId);
@@ -173,7 +144,52 @@ public class UpdateProfileStrategyTests : IDisposable
         existingUser.Name.Should().Be("OldName");
         existingUser.LastName.Should().Be("OldLastName");
     }
+    
+    [Fact(DisplayName = "UpdateProfileAsync should return error response when userId is null")]
+    public async Task UpdateProfileAsync_Should_Return_Error_When_UserId_Null()
+    {
+        // Arrange
+        const string userId = null!;
+        var request = new UpdateUserDtoRequest("NewName", "NewLastName", "new.email@example.com", "+1234567890");
 
+        // Act
+        var response = await _updateProfileStrategy.UpdateProfileAsync(request, userId!);
+
+        // Assert
+        response.Success.Should().BeFalse();
+        response.Message.Should().Be("User not found");
+        _userManagerMock.Verify(um => um.FindByIdAsync(userId!), Times.Once);
+        _userManagerMock.Verify(um => um.UpdateAsync(It.IsAny<User>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "UpdateProfileAsync should return error response when profile update fails")]
+    public async Task UpdateProfileAsync_Should_Return_Error_When_Update_Fails()
+    {
+        // Arrange
+        const string userId = "12345";
+        var request = new UpdateUserDtoRequest("NewName", "NewLastName", "new.email@example.com", "+1234567890");
+
+        var existingUser = new User { Id = userId, Email = "old.email@example.com", PhoneNumber = "+9876543210" };
+        existingUser.SetName("OldName");
+        existingUser.SetLastName("OldLastName");
+        existingUser.SetRole("Admin");
+    
+        await _appDbContext.Users.AddAsync(existingUser);
+        await _appDbContext.SaveChangesAsync();
+
+        _userManagerMock.Setup(um => um.FindByIdAsync(userId)).ReturnsAsync(existingUser);
+        _userManagerMock.Setup(um => um.UpdateAsync(It.IsAny<User>())).ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Failed to update user." }));
+
+        // Act
+        var response = await _updateProfileStrategy.UpdateProfileAsync(request, userId);
+
+        // Assert
+        response.Success.Should().BeFalse();
+        response.Message.Should().Be("Failed to update profile.");
+        _userManagerMock.Verify(um => um.UpdateAsync(It.IsAny<User>()), Times.Once);
+        Log.Warning($"[PROFILE UPDATE] Failed to update profile for user [{userId}]");
+    }
+    
     public void Dispose()
     {
         _appDbContext.Database.EnsureDeleted();

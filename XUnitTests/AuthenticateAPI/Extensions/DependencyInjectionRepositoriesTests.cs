@@ -26,7 +26,8 @@ public class DependencyInjectionRepositoriesTests
         serviceCollection.AddIdentity<User, IdentityRole>()
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
-
+        
+        serviceCollection.AddDistributedMemoryCache();
         serviceCollection.AddDependencyInjectionRepositories();
 
         _serviceProvider = serviceCollection.BuildServiceProvider();
