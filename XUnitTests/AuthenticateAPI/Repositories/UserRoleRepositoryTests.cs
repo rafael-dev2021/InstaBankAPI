@@ -83,7 +83,7 @@ public class UserRoleRepositoryTests
                 .ReturnsAsync(IdentityResult.Success);
 
             // Act
-            await _userRoleRepository.CreateUserIfNotExistsAsync(email, roleName);
+            await _userRoleRepository.CreateUserIfNotExistsAsync(email, roleName,"Test","Test","123.446.676-44","+5540028921");
 
             // Assert
             _userManagerMock.Verify(um => um.FindByEmailAsync(email), Times.Once);
@@ -110,7 +110,7 @@ public class UserRoleRepositoryTests
                 .ReturnsAsync(existingUser);
 
             // Act
-            await _userRoleRepository.CreateUserIfNotExistsAsync(email, roleName);
+            await _userRoleRepository.CreateUserIfNotExistsAsync(email, roleName,"Test","Test","123.446.676-24","+5540028922");
 
             // Assert
             _userManagerMock.Verify(um => um.FindByEmailAsync(email), Times.Once);
