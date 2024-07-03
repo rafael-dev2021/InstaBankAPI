@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using AuthenticateAPI.Dto.Request;
 using AuthenticateAPI.Dto.Response;
+using AuthenticateAPI.Exceptions;
 using AuthenticateAPI.Models;
 using AuthenticateAPI.Repositories.Interfaces;
 using AuthenticateAPI.Security;
@@ -345,7 +346,7 @@ public class AuthenticateServiceTests
             _tokenServiceMock.Setup(ts => ts.ValidateToken(It.IsAny<string>())).Returns((ClaimsPrincipal)null!);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(() => _authenticateService.RefreshTokenServiceAsync(request));
+            var exception = await Assert.ThrowsAsync<TokenRefreshException>(() => _authenticateService.RefreshTokenServiceAsync(request));
             Assert.Equal("[REFRESH_TOKEN] Error processing token refresh request.", exception.Message);
         }
 
@@ -362,7 +363,7 @@ public class AuthenticateServiceTests
             _tokenServiceMock.Setup(ts => ts.ValidateToken(It.IsAny<string>())).Returns(claimsPrincipal);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(() => _authenticateService.RefreshTokenServiceAsync(request));
+            var exception = await Assert.ThrowsAsync<TokenRefreshException>(() => _authenticateService.RefreshTokenServiceAsync(request));
             Assert.Equal("[REFRESH_TOKEN] Error processing token refresh request.", exception.Message);
         }
 
@@ -379,7 +380,7 @@ public class AuthenticateServiceTests
             _repositoryMock.Setup(r => r.GetUserProfileAsync(It.IsAny<string>())).ReturnsAsync((User)null!);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(() => _authenticateService.RefreshTokenServiceAsync(request));
+            var exception = await Assert.ThrowsAsync<TokenRefreshException>(() => _authenticateService.RefreshTokenServiceAsync(request));
             Assert.Equal("[REFRESH_TOKEN] Error processing token refresh request.", exception.Message);
         }
 
