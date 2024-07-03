@@ -15,6 +15,7 @@ public static class DependencyInjectionRepositories
             .AddScoped<IAccountNumberGenerator, AccountNumberGenerator>()
             .AddScoped<ITransferRepository, TransferRepository>()
             .AddScoped<IDepositRepository, DepositRepository>()
-            .AddScoped<IWithdrawRepository, WithdrawRepository>();
+            .AddScoped<IWithdrawRepository, WithdrawRepository>()
+            .AddScoped<ITransactionLogRepository, TransactionLogRepository>();
     }
 }

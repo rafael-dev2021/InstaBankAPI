@@ -5,10 +5,10 @@ namespace BankingServiceAPI.Extensions;
 
 public static class OpenApiExtensions
 {
-    public static void AddOpenApiExtensions(this IServiceCollection services)
+   public static void AddOpenApiExtensions(this IServiceCollection services)
     {
         Env.Load();
-
+        
         var openApiUrl = Environment.GetEnvironmentVariable("OPENAPI_URL");
         const string bearer = "Bearer";
 
@@ -41,7 +41,7 @@ public static class OpenApiExtensions
                     Url = new Uri(openApiUrl!)
                 }
             });
-
+            
             var securityScheme = new OpenApiSecurityScheme
             {
                 Name = "Authorization",
@@ -51,10 +51,10 @@ public static class OpenApiExtensions
                 In = ParameterLocation.Header,
                 Description = "JWT Authorization header using the Bearer scheme."
             };
-
+            
             c.AddSecurityDefinition(bearer, securityScheme);
 
-            var securityRequirement = new OpenApiSecurityRequirement
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
                 {
                     new OpenApiSecurityScheme
@@ -63,13 +63,14 @@ public static class OpenApiExtensions
                         {
                             Type = ReferenceType.SecurityScheme,
                             Id = bearer
-                        }
+                        },
+                        Scheme = "oauth2",
+                        Name = bearer,
+                        In = ParameterLocation.Header
                     },
-                    Array.Empty<string>()
+                    new List<string>()
                 }
-            };
-
-            c.AddSecurityRequirement(securityRequirement);
+            });
         });
 
         services.AddAuthorizationBuilder()
