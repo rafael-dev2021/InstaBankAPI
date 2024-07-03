@@ -4,36 +4,41 @@ using BankingServiceAPI.Exceptions;
 using BankingServiceAPI.Models;
 using BankingServiceAPI.Repositories.Interfaces;
 using BankingServiceAPI.Services.Interfaces;
+using Serilog;
 
 namespace BankingServiceAPI.Services;
 
 public class TransferDtoService(
     ITransferRepository transferRepository,
     IBankTransactionRepository bankTransactionRepository,
-    ILogger<TransferDtoService> logger,
+    ITransactionLogService transactionCreationService,
     IMapper mapper) : ITransferDtoService
 {
     public async Task<TransferByBankAccountNumberDtoResponse> TransferByBankAccountNumberDtoAsync(string userId,
         int originAccountNumber, int destinationAccountNumber,
         decimal amount)
     {
-        logger.LogInformation(
-            "Attempting to transfer {Amount} from account number {OriginAccountNumber} to account number {DestinationAccountNumber} for user {UserId}",
+        Log.Information(
+            "[TRANSFER_BY_ACCOUNT_NUMBER] Attempting to transfer [{Amount}] from account number [{OriginAccountNumber}] to account number [{DestinationAccountNumber}] for user [{UserId}]",
             amount, originAccountNumber, destinationAccountNumber, userId);
 
         var originAccount = await transferRepository.GetByAccountNumberAsync(originAccountNumber);
         var destinationAccount = await transferRepository.GetByAccountNumberAsync(destinationAccountNumber);
 
         var transfer = await ExecuteTransferAsync(userId, originAccount, destinationAccount, amount);
-        
+
+        Log.Information(
+            "[TRANSFER_BY_ACCOUNT_NUMBER] Transfer of [{Amount}] from account number [{OriginAccountNumber}] to account number [{DestinationAccountNumber}] for user [{UserId}] successfully completed",
+            amount, originAccountNumber, destinationAccountNumber, userId);
         return mapper.Map<TransferByBankAccountNumberDtoResponse>(transfer);
     }
 
-    public async Task<TransferByCpfDtoResponse> TransferByCpfDtoAsync(string userId, string? originCpf, string? destinationCpf,
+    public async Task<TransferByCpfDtoResponse> TransferByCpfDtoAsync(string userId, string? originCpf,
+        string? destinationCpf,
         decimal amount)
     {
-        logger.LogInformation(
-            "Attempting to transfer {Amount} from account with CPF {OriginCpf} to account with CPF {DestinationCpf} for user {UserId}",
+        Log.Information(
+            "[TRANSFER_BY_CPF] Attempting to transfer [{Amount}] from account with CPF [{OriginCpf}] to account with CPF [{DestinationCpf}] for user [{UserId}]",
             amount, originCpf, destinationCpf, userId);
 
         var originAccount = await transferRepository.GetByCpfAsync(originCpf!);
@@ -41,6 +46,9 @@ public class TransferDtoService(
 
         var transfer = await ExecuteTransferAsync(userId, originAccount, destinationAccount, amount);
 
+        Log.Information(
+            "[TRANSFER_BY_CPF] Transfer of [{Amount}] from account with CPF [{OriginCpf}] to account with CPF [{DestinationCpf}] for user [{UserId}] successfully completed",
+            amount, originCpf, destinationCpf, userId);
         return mapper.Map<TransferByCpfDtoResponse>(transfer);
     }
 
@@ -50,7 +58,7 @@ public class TransferDtoService(
     {
         ValidateAccounts(userId, originAccount, destinationAccount);
 
-        logger.LogInformation("Accounts validated. Proceeding with transfer.");
+        Log.Information("[EXECUTE_TRANSFER] Accounts validated. Proceeding with transfer.");
 
         var transfer = new Transfer();
         transfer.SetAccountOrigin(originAccount!);
@@ -58,32 +66,34 @@ public class TransferDtoService(
         transfer.SetAmount(amount);
         transfer.SetTransferDate(DateTime.UtcNow);
 
-        logger.LogInformation(
-            "Transfer entity created for origin account number {OriginAccountNumber} to destination account number {DestinationAccountNumber} with amount {Amount}",
+        Log.Information(
+            "[EXECUTE_TRANSFER] Transfer entity created for origin account number [{OriginAccountNumber}] to destination account number [{DestinationAccountNumber}] with amount [{Amount}]",
             originAccount!.AccountNumber, destinationAccount!.AccountNumber, amount);
 
         transfer.Execute();
 
         await bankTransactionRepository.CreateEntityAsync(transfer);
 
-        logger.LogInformation(
-            "Transfer of {Amount} from account number {OriginAccountNumber} to account number {DestinationAccountNumber} for user {UserId} successfully completed",
+        await CreateAndSaveTransactionLogAsync(transfer);
+
+        Log.Information(
+            "[EXECUTE_TRANSFER] Transfer of [{Amount}] from account number [{OriginAccountNumber}] to account number [{DestinationAccountNumber}] for user [{UserId}] successfully completed",
             amount, originAccount.AccountNumber, destinationAccount.AccountNumber, userId);
 
         return transfer;
     }
 
-    private void ValidateAccounts(string? userId, BankAccount? originAccount, BankAccount? destinationAccount)
+    private static void ValidateAccounts(string? userId, BankAccount? originAccount, BankAccount? destinationAccount)
     {
         if (originAccount == null)
         {
-            logger.LogWarning("Origin account not found for user {UserId}", userId);
+            Log.Warning("[VALIDATE_ACCOUNTS] Origin account not found for user [{UserId}]", userId);
             throw new AccountNotFoundException("Origin account not found.");
         }
 
         if (destinationAccount == null)
         {
-            logger.LogWarning("Destination account not found for user {UserId}", userId);
+            Log.Warning("[VALIDATE_ACCOUNTS] Destination account not found for user [{UserId}]", userId);
             throw new AccountNotFoundException("Destination account not found.");
         }
 
@@ -91,5 +101,16 @@ public class TransferDtoService(
         {
             throw new UnauthorizedAccessException("User not authorized to transfer from this account.");
         }
+    }
+
+    private async Task CreateAndSaveTransactionLogAsync(Transfer transfer)
+    {
+        Log.Information("[CREATE_TRANSACTION_LOG] Creating transaction log for transfer [{TransferId}]", transfer.Id);
+
+        var transactionDetails = await transactionCreationService.CreateTransactionDetailsAsync(transfer);
+        var transactionAudit = await transactionCreationService.CreateTransactionAuditAsync(transfer);
+        await transactionCreationService.CreateTransactionLogAsync(transfer, transactionDetails, transactionAudit);
+
+        Log.Information("[CREATE_TRANSACTION_LOG] Transaction log created for transfer [{TransferId}]", transfer.Id);
     }
 }
