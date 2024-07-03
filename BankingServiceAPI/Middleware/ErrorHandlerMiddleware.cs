@@ -1,10 +1,11 @@
 ﻿using System.Net;
 using System.Text.Json;
 using BankingServiceAPI.Exceptions;
+using Serilog;
 
 namespace BankingServiceAPI.Middleware;
 
-public class ErrorHandlerMiddleware(RequestDelegate next, ILogger<ErrorHandlerMiddleware> logger)
+public class ErrorHandlerMiddleware(RequestDelegate next)
 {
     public async Task Invoke(HttpContext context)
     {
@@ -18,11 +19,9 @@ public class ErrorHandlerMiddleware(RequestDelegate next, ILogger<ErrorHandlerMi
         }
     }
 
-    private Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        logger.LogDebug(exception, "An error occurred while requesting: {Message}", exception.Message);
-
-        logger.LogError(exception, "An error occurred during the request.");
+        Log.Debug(exception, "An error occurred while requesting: {Message}", exception.Message);
 
         var response = context.Response;
         response.ContentType = "application/json";

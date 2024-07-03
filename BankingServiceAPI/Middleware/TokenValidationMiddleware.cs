@@ -27,7 +27,7 @@ public class TokenValidationMiddleware(RequestDelegate next, HttpClient httpClie
     private async Task<bool> IsRevokedTokenValidAsync(string token)
     {
         var baseUrl = GetBaseUrl();
-        var url = $"{baseUrl}/v1/auth/revoked-token";
+        var url = $"{baseUrl}/v1/auth/revoked-token?token={token}";
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -38,7 +38,7 @@ public class TokenValidationMiddleware(RequestDelegate next, HttpClient httpClie
     private async Task<bool> IsExpiredTokenValidAsync(string token)
     {
         var baseUrl = GetBaseUrl();
-        var url = $"{baseUrl}/v1/auth/expired-token";
+        var url = $"{baseUrl}/v1/auth/expired-token?token={token}";
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
