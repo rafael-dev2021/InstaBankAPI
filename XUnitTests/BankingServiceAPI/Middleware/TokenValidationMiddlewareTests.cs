@@ -42,7 +42,7 @@ public class TokenValidationMiddlewareTests
                 ItExpr.Is<HttpRequestMessage>(req =>
                     req.Headers.Authorization != null &&
                     req.Method == HttpMethod.Get &&
-                    req.RequestUri == new Uri("https://localhost:7074/v1/auth/revoked-token") &&
+                    req.RequestUri == new Uri("https://localhost:7074/v1/auth/revoked-token?token=validToken") &&
                     req.Headers.Authorization.Parameter == "validToken"),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
@@ -53,7 +53,7 @@ public class TokenValidationMiddlewareTests
                 ItExpr.Is<HttpRequestMessage>(req =>
                     req.Headers.Authorization != null &&
                     req.Method == HttpMethod.Get &&
-                    req.RequestUri == new Uri("https://localhost:7074/v1/auth/expired-token") &&
+                    req.RequestUri == new Uri("https://localhost:7074/v1/auth/expired-token?token=validToken") &&
                     req.Headers.Authorization.Parameter == "validToken"),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
@@ -76,7 +76,7 @@ public class TokenValidationMiddlewareTests
                 ItExpr.Is<HttpRequestMessage>(req =>
                     req.Headers.Authorization != null &&
                     req.Method == HttpMethod.Get &&
-                    req.RequestUri == new Uri("https://localhost:7074/v1/auth/revoked-token") &&
+                    req.RequestUri == new Uri("https://localhost:7074/v1/auth/revoked-token?token=revokedToken") &&
                     req.Headers.Authorization.Parameter == "revokedToken"),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.Unauthorized));
@@ -87,7 +87,7 @@ public class TokenValidationMiddlewareTests
                 ItExpr.Is<HttpRequestMessage>(req =>
                     req.Headers.Authorization != null &&
                     req.Method == HttpMethod.Get &&
-                    req.RequestUri == new Uri("https://localhost:7074/v1/auth/expired-token") &&
+                    req.RequestUri == new Uri("https://localhost:7074/v1/auth/expired-token?token=revokedToken") &&
                     req.Headers.Authorization.Parameter == "revokedToken"),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
@@ -110,7 +110,7 @@ public class TokenValidationMiddlewareTests
     {
         var context = new DefaultHttpContext();
         context.Request.Headers.Authorization = "Bearer expiredToken";
-        context.Response.Body = new MemoryStream(); 
+        context.Response.Body = new MemoryStream();
 
         _httpMessageHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>(
@@ -118,8 +118,7 @@ public class TokenValidationMiddlewareTests
                 ItExpr.Is<HttpRequestMessage>(req =>
                     req.Headers.Authorization != null &&
                     req.Method == HttpMethod.Get &&
-                    req.RequestUri == new Uri("https://localhost:7074/v1/auth/revoked-token") &&
-                    req.Headers.Authorization.Parameter == "expiredToken"),
+                    req.RequestUri == new Uri("https://localhost:7074/v1/auth/revoked-token?token=expiredToken")),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
 
@@ -129,8 +128,7 @@ public class TokenValidationMiddlewareTests
                 ItExpr.Is<HttpRequestMessage>(req =>
                     req.Headers.Authorization != null &&
                     req.Method == HttpMethod.Get &&
-                    req.RequestUri == new Uri("https://localhost:7074/v1/auth/expired-token") &&
-                    req.Headers.Authorization.Parameter == "expiredToken"),
+                    req.RequestUri == new Uri("https://localhost:7074/v1/auth/expired-token?token=expiredToken")),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.Unauthorized));
 
@@ -138,9 +136,9 @@ public class TokenValidationMiddlewareTests
 
         Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
 
-        context.Response.Body.Seek(0, SeekOrigin.Begin); 
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
         var response = await new StreamReader(context.Response.Body).ReadToEndAsync();
-    
+
         _testOutputHelper.WriteLine("Response: " + response);
 
         Assert.Equal("Token is expired or revoked", response);

@@ -16,8 +16,7 @@ public class ErrorHandlerMiddlewareTests
     public ErrorHandlerMiddlewareTests()
     {
         _nextMock = new Mock<RequestDelegate>();
-        Mock<ILogger<ErrorHandlerMiddleware>> loggerMock = new();
-        _middleware = new ErrorHandlerMiddleware(_nextMock.Object, loggerMock.Object);
+        _middleware = new ErrorHandlerMiddleware(_nextMock.Object);
     }
 
     [Fact]

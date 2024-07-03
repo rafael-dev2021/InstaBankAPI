@@ -12,36 +12,41 @@ public class TransactionLogTests
         const int bankTransactionId = 2;
         var bankTransaction = new BankTransaction();
         const string transactionType = "Credit";
-        const string description = "Test Description";
         const decimal amount = 100.50m;
         const int accountOriginId = 3;
         int? accountDestinationId = 4;
         var transactionDate = DateTime.Now;
+        var transactionDetails = new TransactionDetails();
+        var transactionAudit = new TransactionAudit();
 
         // Act
         var transactionLog = new TransactionLog
         {
-            Id = id,
-            BankTransactionId = bankTransactionId,
-            BankTransaction = bankTransaction,
-            TransactionType = transactionType,
-            Description = description,
-            Amount = amount,
-            AccountOriginId = accountOriginId,
-            AccountDestinationId = accountDestinationId,
-            TransactionDate = transactionDate
+            Id = id
         };
+        transactionLog.SetBankTransaction(bankTransaction);
+        transactionLog.Configure(
+            bankTransactionId,
+            transactionType,
+            amount,
+            accountOriginId,
+            accountDestinationId,
+            transactionDate,
+            transactionDetails,
+            transactionAudit
+        );
 
         // Assert
         Assert.Equal(id, transactionLog.Id);
         Assert.Equal(bankTransactionId, transactionLog.BankTransactionId);
         Assert.Equal(bankTransaction, transactionLog.BankTransaction);
         Assert.Equal(transactionType, transactionLog.TransactionType);
-        Assert.Equal(description, transactionLog.Description);
         Assert.Equal(amount, transactionLog.Amount);
         Assert.Equal(accountOriginId, transactionLog.AccountOriginId);
         Assert.Equal(accountDestinationId, transactionLog.AccountDestinationId);
         Assert.Equal(transactionDate, transactionLog.TransactionDate);
+        Assert.Equal(transactionDetails, transactionLog.TransactionDetails);
+        Assert.Equal(transactionAudit, transactionLog.TransactionAudit);
     }
 
     [Fact]

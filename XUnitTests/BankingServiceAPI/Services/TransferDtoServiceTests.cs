@@ -4,7 +4,7 @@ using BankingServiceAPI.Exceptions;
 using BankingServiceAPI.Models;
 using BankingServiceAPI.Repositories.Interfaces;
 using BankingServiceAPI.Services;
-using Microsoft.Extensions.Logging;
+using BankingServiceAPI.Services.Interfaces;
 using Moq;
 
 namespace XUnitTests.BankingServiceAPI.Services;
@@ -21,11 +21,11 @@ public class TransferDtoServiceTests
         _transferRepositoryMock = new Mock<ITransferRepository>();
         _bankTransactionRepositoryMock = new Mock<IBankTransactionRepository>();
         _mockMapper = new Mock<IMapper>();
-        Mock<ILogger<TransferDtoService>> loggerMock = new();
+        Mock<ITransactionLogService> transactionLogServiceMock = new();
         _transferDtoService = new TransferDtoService(
             _transferRepositoryMock.Object,
             _bankTransactionRepositoryMock.Object,
-            loggerMock.Object,
+            transactionLogServiceMock.Object,
             _mockMapper.Object
         );
     }
