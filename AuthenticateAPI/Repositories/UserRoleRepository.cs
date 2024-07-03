@@ -7,6 +7,9 @@ namespace AuthenticateAPI.Repositories;
 public class UserRoleRepository(RoleManager<IdentityRole> roleManager, UserManager<User> userManager)
     : IUserRoleRepository
 {
+    private const string Admin = "Admin";
+    private const string User = "User";
+
     public async Task CreateRoleIfNotExistsAsync(string roleName)
     {
         if (!await roleManager.RoleExistsAsync(roleName))
@@ -21,7 +24,7 @@ public class UserRoleRepository(RoleManager<IdentityRole> roleManager, UserManag
     }
 
     public async Task CreateUserIfNotExistsAsync(string email, string roleName, string firstName, string lastName,
-        string cpf,string phoneNumber)
+        string cpf, string phoneNumber)
     {
         if (await userManager.FindByEmailAsync(email) == null)
         {
@@ -52,13 +55,15 @@ public class UserRoleRepository(RoleManager<IdentityRole> roleManager, UserManag
 
     public async Task UserAsync()
     {
-        await CreateUserIfNotExistsAsync("admin@localhost.com", "Admin", "Admin", "Admin", "123.456.789-01","+5540028922");
-        await CreateUserIfNotExistsAsync("user@localhost.com", "User", "User", "User", "987.654.321-00","+5540028921");
+        await CreateUserIfNotExistsAsync("admin@localhost.com", Admin, Admin, Admin, "123.456.789-00",
+            "+5540028922");
+        await CreateUserIfNotExistsAsync("user@localhost.com", User, User, User, "987.654.321-01",
+            "+5540028923");
     }
 
     public async Task RoleAsync()
     {
-        await CreateRoleIfNotExistsAsync("Admin");
-        await CreateRoleIfNotExistsAsync("User");
+        await CreateRoleIfNotExistsAsync(Admin);
+        await CreateRoleIfNotExistsAsync(User);
     }
 }
