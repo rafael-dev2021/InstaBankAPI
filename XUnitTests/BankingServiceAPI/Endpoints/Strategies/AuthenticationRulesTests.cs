@@ -8,61 +8,7 @@ namespace XUnitTests.BankingServiceAPI.Endpoints.Strategies;
 public class AuthenticationRulesTests
 {
     [Fact]
-    public void CheckAuthenticationAndAuthorization_NoAuthenticationRequired_ReturnsNull()
-    {
-        // Arrange
-        var context = new DefaultHttpContext();
-        const bool requireAuthentication = false;
-
-        // Act
-        var result = AuthenticationRules.CheckAuthenticationAndAuthorization(context, requireAuthentication);
-
-        // Assert
-        Assert.Null(result);
-    }
-
-    [Fact]
-    public void CheckAuthenticationAndAuthorization_NotAuthenticated_ReturnsUnauthorized()
-    {
-        // Arrange
-        var context = new DefaultHttpContext
-        {
-            User = new ClaimsPrincipal(new ClaimsIdentity())
-        };
-        const bool requireAuthentication = true;
-
-        // Act
-        var result = AuthenticationRules.CheckAuthenticationAndAuthorization(context, requireAuthentication);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<JsonHttpResult<Dictionary<string, string>>>(result);
-        var jsonResult = result as JsonHttpResult<Dictionary<string, string>>;
-        Assert.Equal(StatusCodes.Status401Unauthorized, jsonResult?.StatusCode);
-    }
-
-    [Fact]
-    public void CheckAuthenticationAndAuthorization_AuthenticatedNotAdmin_ReturnsForbidden()
-    {
-        // Arrange
-        var context = new DefaultHttpContext();
-        var identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, "User") }, "TestAuthType");
-        var user = new ClaimsPrincipal(identity);
-        context.User = user;
-        const bool requireAuthentication = true;
-
-        // Act
-        var result = AuthenticationRules.CheckAuthenticationAndAuthorization(context, requireAuthentication);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<JsonHttpResult<Dictionary<string, string>>>(result);
-        var jsonResult = result as JsonHttpResult<Dictionary<string, string>>;
-        Assert.Equal(StatusCodes.Status403Forbidden, jsonResult?.StatusCode);
-    }
-
-    [Fact]
-    public void CheckAuthenticationAndAuthorization_AuthenticatedAdmin_ReturnsNull()
+    public void CheckAdminRole_UserIsAdmin_ReturnsNull()
     {
         // Arrange
         var context = new DefaultHttpContext();
@@ -73,13 +19,31 @@ public class AuthenticationRulesTests
         }, "TestAuthType");
         var user = new ClaimsPrincipal(identity);
         context.User = user;
-        const bool requireAuthentication = true;
 
         // Act
-        var result = AuthenticationRules.CheckAuthenticationAndAuthorization(context, requireAuthentication);
+        var result = AuthenticationRules.CheckAdminRole(context);
 
         // Assert
         Assert.Null(result);
+    }
+
+    [Fact]
+    public void CheckAdminRole_UserIsNotAdmin_ReturnsForbidden()
+    {
+        // Arrange
+        var context = new DefaultHttpContext();
+        var identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, "User") }, "TestAuthType");
+        var user = new ClaimsPrincipal(identity);
+        context.User = user;
+
+        // Act
+        var result = AuthenticationRules.CheckAdminRole(context);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.IsType<JsonHttpResult<Dictionary<string, string>>>(result);
+        var jsonResult = result as JsonHttpResult<Dictionary<string, string>>;
+        Assert.Equal(StatusCodes.Status403Forbidden, jsonResult?.StatusCode);
     }
 
     [Fact]

@@ -92,7 +92,7 @@ public class UserRoleRepositoryTests
                 user.UserName == email &&
                 user.NormalizedEmail!.Equals(email, StringComparison.CurrentCultureIgnoreCase) &&
                 user.NormalizedUserName!.Equals(email, StringComparison.CurrentCultureIgnoreCase) &&
-                user.PhoneNumber == "1140028922" &&
+                user.PhoneNumber == "+5540028921" &&
                 user.PhoneNumberConfirmed &&
                 user.EmailConfirmed), "@Visual24k+"), Times.Once);
             _userManagerMock.Verify(um => um.AddToRoleAsync(It.IsAny<User>(), roleName), Times.Once);
@@ -147,7 +147,7 @@ public class UserRoleRepositoryTests
                 user.UserName == adminEmail &&
                 user.NormalizedEmail!.Equals(adminEmail, StringComparison.CurrentCultureIgnoreCase) &&
                 user.NormalizedUserName!.Equals(adminEmail, StringComparison.CurrentCultureIgnoreCase) &&
-                user.PhoneNumber == "1140028922" &&
+                user.PhoneNumber == "+5540028922" &&
                 user.PhoneNumberConfirmed &&
                 user.EmailConfirmed), "@Visual24k+"), Times.Once);
             _userManagerMock.Verify(um => um.AddToRoleAsync(It.IsAny<User>(), roleName), Times.Once);
@@ -179,7 +179,7 @@ public class UserRoleRepositoryTests
                 user.UserName == userEmail &&
                 user.NormalizedEmail!.Equals(userEmail, StringComparison.CurrentCultureIgnoreCase) &&
                 user.NormalizedUserName!.Equals(userEmail, StringComparison.CurrentCultureIgnoreCase) &&
-                user.PhoneNumber == "1140028922" &&
+                user.PhoneNumber == "+5540028921" &&
                 user.PhoneNumberConfirmed &&
                 user.EmailConfirmed), "@Visual24k+"), Times.Once);
             _userManagerMock.Verify(um => um.AddToRoleAsync(It.IsAny<User>(), roleName), Times.Once);
