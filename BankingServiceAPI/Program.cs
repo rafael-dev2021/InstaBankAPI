@@ -37,6 +37,7 @@ app.UseCors("CorsPolicy");
 
 app.UseMiddleware<TokenValidationMiddleware>();
 app.UseMiddleware<ErrorHandlerMiddleware>();
+app.UseMiddleware<LoggingMiddleware>();
 
 app.UseHttpsRedirection();
 app.UseRouting();
