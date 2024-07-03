@@ -182,7 +182,7 @@ public class AuthenticateService(
         var principal = tokenService.ValidateToken(refreshToken);
         if (principal != null) return principal;
         Log.Warning("[REFRESH_TOKEN] Invalid refresh token provided.");
-        throw new UnauthorizedAccessException("Invalid refresh token");
+        throw new TokenRefreshException("Invalid refresh token");
     }
 
     private async Task<User> GetUserByEmailAsync(string email)
@@ -190,6 +190,6 @@ public class AuthenticateService(
         var user = await repository.GetUserProfileAsync(email);
         if (user != null) return user;
         Log.Warning("[REFRESH_TOKEN] User not found for email: [{Email}]", email);
-        throw new UnauthorizedAccessException("User not found");
+        throw new TokenRefreshException("User not found");
     }
 }
