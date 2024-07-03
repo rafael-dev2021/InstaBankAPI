@@ -85,7 +85,13 @@ public class TransactionLogService(
 
         deviceId = Guid.NewGuid().ToString();
         context.Response.Cookies.Append("DeviceId", deviceId,
-            new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1) });
+            new CookieOptions
+            {
+                Expires = DateTimeOffset.UtcNow.AddYears(1),
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict 
+            });
         return deviceId;
     }
 }

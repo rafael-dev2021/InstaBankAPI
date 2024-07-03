@@ -58,8 +58,6 @@ public class TransferDtoService(
     {
         ValidateAccounts(userId, originAccount, destinationAccount);
 
-        Log.Information("[EXECUTE_TRANSFER] Accounts validated. Proceeding with transfer.");
-
         var transfer = new Transfer();
         transfer.SetAccountOrigin(originAccount!);
         transfer.SetAccountDestination(destinationAccount!);
