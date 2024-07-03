@@ -3,6 +3,7 @@ using BankingServiceAPI.Endpoints.Strategies;
 using BankingServiceAPI.Services.Interfaces;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace BankingServiceAPI.Endpoints;
 
@@ -14,6 +15,7 @@ public static class WithdrawEndpoint
             [FromServices] IWithdrawDtoService service,
             [FromBody] WithdrawDtoRequest request,
             [FromServices] IValidator<WithdrawDtoRequest> validator,
+            [FromServices] IDistributedCache cache,
             HttpContext context) =>
         {
             var (errorResult, userId) = await RequestHandler.HandleRequestAsync(context, request, validator);
@@ -22,6 +24,8 @@ public static class WithdrawEndpoint
                 return errorResult;
             }
 
+            await cache.RemoveAsync("cached_bank_accounts_list");
+            
             return await RequestHandler.HandleServiceCallAsync(async () =>
             {
                 var withdraw = await service.WithdrawDtoAsync(userId!, request.AccountNumber, request.Amount);
