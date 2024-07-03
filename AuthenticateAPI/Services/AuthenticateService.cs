@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using AuthenticateAPI.Dto.Request;
 using AuthenticateAPI.Dto.Response;
+using AuthenticateAPI.Exceptions;
 using AuthenticateAPI.Models;
 using AuthenticateAPI.Repositories.Interfaces;
 using AuthenticateAPI.Security;
@@ -153,10 +154,10 @@ public class AuthenticateService(
             Log.Information("[REFRESH_TOKEN] Token refreshed successfully for user: [{Email}]", userEmail);
             return tokenResponse;
         }
-        catch (Exception ex)
+        catch (TokenRefreshException ex)
         {
             Log.Error(ex, "[REFRESH_TOKEN] Error processing token refresh request.");
-            throw new Exception("[REFRESH_TOKEN] Error processing token refresh request.", ex);
+            throw new TokenRefreshException("[REFRESH_TOKEN] Error processing token refresh request.", ex);
         }
     }
 

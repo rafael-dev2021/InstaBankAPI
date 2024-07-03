@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using AuthenticateAPI.Dto.Request;
 using AuthenticateAPI.Dto.Response;
+using AuthenticateAPI.Exceptions;
 using AuthenticateAPI.Models;
 using AuthenticateAPI.Repositories.Interfaces;
 using Microsoft.AspNetCore.Identity;
@@ -55,10 +56,10 @@ public class AuthenticatedStrategy(SignInManager<User> signInManager, IDistribut
             var attempts = await cache.GetStringAsync(cacheKey);
             return attempts != null ? int.Parse(attempts) : 0;
         }
-        catch (Exception ex)
+        catch (CacheException ex)
         {
             Log.Error(ex, "[CACHE] Error retrieving login attempts for cache key [{CacheKey}]", cacheKey);
-            throw new Exception($"[CACHE] Error retrieving login attempts for cache key [{cacheKey}]", ex);
+            throw new CacheException($"[CACHE] Error retrieving login attempts for cache key [{cacheKey}]", ex);
         }
     }
 
@@ -76,10 +77,10 @@ public class AuthenticatedStrategy(SignInManager<User> signInManager, IDistribut
 
             Log.Information("[CACHE] Login attempts incremented for cache key [{CacheKey}]", cacheKey);
         }
-        catch (Exception ex)
+        catch (CacheException ex)
         {
             Log.Error(ex, "[CACHE] Error incrementing login attempts for cache key [{CacheKey}]", cacheKey);
-            throw new Exception($"[CACHE] Error incrementing login attempts for cache key [{cacheKey}]", ex);
+            throw new CacheException($"[CACHE] Error incrementing login attempts for cache key [{cacheKey}]", ex);
         }
     }
 
@@ -90,10 +91,10 @@ public class AuthenticatedStrategy(SignInManager<User> signInManager, IDistribut
             await cache.RemoveAsync(cacheKey);
             Log.Information("[CACHE] Login attempts reset for cache key [{CacheKey}]", cacheKey);
         }
-        catch (Exception ex)
+        catch (CacheException ex)
         {
             Log.Error(ex, "[CACHE] Error resetting login attempts for cache key [{CacheKey}]", cacheKey);
-            throw new Exception($"[CACHE] Error resetting login attempts for cache key [{cacheKey}]", ex);
+            throw new CacheException($"[CACHE] Error resetting login attempts for cache key [{cacheKey}]", ex);
         }
     }
 }
