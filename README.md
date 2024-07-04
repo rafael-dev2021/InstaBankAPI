@@ -85,7 +85,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
+[![Product Name Screen Shot][product-screenshot]](https://www.linkedin.com/in/rafael-s-a79314207)
 
 <p>In short, the main objective of the project is to provide a secure API for user authentication and another for managing banking operations, both with robust validation and protection through authentication and authorization.</p>
 
