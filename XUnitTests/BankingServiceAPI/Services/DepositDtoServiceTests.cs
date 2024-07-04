@@ -4,7 +4,7 @@ using BankingServiceAPI.Exceptions;
 using BankingServiceAPI.Models;
 using BankingServiceAPI.Repositories.Interfaces;
 using BankingServiceAPI.Services;
-using Microsoft.Extensions.Logging;
+using BankingServiceAPI.Services.Interfaces;
 using Moq;
 
 namespace XUnitTests.BankingServiceAPI.Services;
@@ -14,7 +14,6 @@ public class DepositDtoServiceTests
     private readonly Mock<IDepositRepository> _depositRepositoryMock;
     private readonly Mock<IBankTransactionRepository> _bankTransactionRepositoryMock;
     private readonly Mock<IMapper> _mapperMock;
-    private readonly Mock<ILogger<DepositDtoService>> _loggerMock;
     private readonly DepositDtoService _depositDtoService;
 
     public DepositDtoServiceTests()
@@ -22,12 +21,12 @@ public class DepositDtoServiceTests
         _depositRepositoryMock = new Mock<IDepositRepository>();
         _bankTransactionRepositoryMock = new Mock<IBankTransactionRepository>();
         _mapperMock = new Mock<IMapper>();
-        _loggerMock = new Mock<ILogger<DepositDtoService>>();
+        Mock<ITransactionLogService> transactionLogServiceMock = new();
 
         _depositDtoService = new DepositDtoService(
             _depositRepositoryMock.Object,
             _bankTransactionRepositoryMock.Object,
-            _loggerMock.Object,
+            transactionLogServiceMock.Object,
             _mapperMock.Object);
     }
 
@@ -75,14 +74,6 @@ public class DepositDtoServiceTests
         Assert.Equal(50m, result.Amount);
 
         _bankTransactionRepositoryMock.Verify(r => r.CreateEntityAsync(It.IsAny<Deposit>()), Times.Once);
-        _loggerMock.Verify(l => l.Log(
-                It.Is<LogLevel>(logLevel => logLevel == LogLevel.Information),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) =>
-                    v.ToString()!.Contains("Deposit of 50 to account number 123456 for user 1 successfully completed")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
-            Times.Once);
     }
 
     [Fact]
@@ -98,14 +89,6 @@ public class DepositDtoServiceTests
         );
 
         Assert.Equal("Account not found.", exception.Message);
-        _loggerMock.Verify(l => l.Log(
-                It.Is<LogLevel>(logLevel => logLevel == LogLevel.Warning),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) =>
-                    v.ToString()!.Contains("Account number 123456 not found for user 1")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
-            Times.Once);
     }
 
     [Fact]
@@ -130,13 +113,5 @@ public class DepositDtoServiceTests
         );
 
         Assert.Equal("User not authorized to deposit to this account.", exception.Message);
-        _loggerMock.Verify(l => l.Log(
-                It.Is<LogLevel>(logLevel => logLevel == LogLevel.Warning),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) =>
-                    v.ToString()!.Contains("User 1 is not authorized to deposit to account number 123456")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
-            Times.Once);
     }
 }

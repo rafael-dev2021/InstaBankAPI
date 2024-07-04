@@ -1,12 +1,12 @@
 ﻿using System.Security.Claims;
 using AuthenticateAPI.Dto.Request;
 using AuthenticateAPI.Dto.Response;
+using AuthenticateAPI.Exceptions;
 using AuthenticateAPI.Models;
 using AuthenticateAPI.Repositories.Interfaces;
 using AuthenticateAPI.Security;
 using AuthenticateAPI.Services;
 using AutoMapper;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace XUnitTests.AuthenticateAPI.Services;
@@ -16,7 +16,6 @@ public class AuthenticateServiceTests
     private readonly Mock<IAuthenticatedRepository> _repositoryMock;
     private readonly AuthenticateService _authenticateService;
     private readonly Mock<ITokenService> _tokenServiceMock;
-    private readonly Mock<ILogger<AuthenticateService>> _loggerMock;
     private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<ITokenManagerService> _tokenManagerServiceMock;
 
@@ -25,13 +24,11 @@ public class AuthenticateServiceTests
     {
         _repositoryMock = new Mock<IAuthenticatedRepository>();
         _tokenServiceMock = new Mock<ITokenService>();
-        _loggerMock = new Mock<ILogger<AuthenticateService>>();
         _mapperMock = new Mock<IMapper>();
         _tokenManagerServiceMock = new Mock<ITokenManagerService>();
         _authenticateService = new AuthenticateService(
             _repositoryMock.Object,
             _tokenServiceMock.Object,
-            _loggerMock.Object,
             _mapperMock.Object,
             _tokenManagerServiceMock.Object
         );
@@ -61,29 +58,19 @@ public class AuthenticateServiceTests
 
             var userDtos = new List<UserDtoResponse>
             {
-                new UserDtoResponse("1", "Name 1", "Last Name 1", "user1@example.com", "Admin"),
-                new UserDtoResponse("2", "Name 2", "Last Name 2", "user2@example.com", "User")
+                new("1", "Name 1", "Last Name 1", "user1@example.com", "Admin"),
+                new("2", "Name 2", "Last Name 2", "user2@example.com", "User")
             };
 
             _repositoryMock.Setup(r => r.GetAllUsersAsync()).ReturnsAsync(users);
             _mapperMock.Setup(m => m.Map<IEnumerable<UserDtoResponse>>(users)).Returns(userDtos);
 
             // Act
-            var result = await _authenticateService.GetAllUsersDtoAsync();
+            var result = await _authenticateService.GetAllUsersServiceAsync();
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal(userDtos, result);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString() == "Returning all users"),
-                    It.IsAny<Exception>(),
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-                Times.Once);
         }
 
         [Fact]
@@ -96,21 +83,11 @@ public class AuthenticateServiceTests
             _mapperMock.Setup(m => m.Map<IEnumerable<UserDtoResponse>>(users)).Returns(new List<UserDtoResponse>());
 
             // Act
-            var result = await _authenticateService.GetAllUsersDtoAsync();
+            var result = await _authenticateService.GetAllUsersServiceAsync();
 
             // Assert
             Assert.NotNull(result);
             Assert.Empty(result);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString() == "Returning all users"),
-                    It.IsAny<Exception>(),
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-                Times.Once);
         }
     }
 
@@ -136,33 +113,12 @@ public class AuthenticateServiceTests
                 .ReturnsAsync(tokenResponse);
 
             // Act
-            var result = await _authenticateService.LoginAsync(loginRequest);
+            var result = await _authenticateService.LoginServiceAsync(loginRequest);
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal(tokenResponse.Token, result.Token);
             Assert.Equal(tokenResponse.RefreshToken, result.RefreshToken);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) =>
-                        o.ToString() == $"LoginAsync called with email: {loginRequest.Email}"),
-                    It.IsAny<Exception>(),
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-                Times.Once);
-
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) =>
-                        o.ToString() == $"Login successful for email: {loginRequest.Email}"),
-                    It.IsAny<Exception>(),
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-                Times.Once);
         }
 
         [Fact]
@@ -177,21 +133,9 @@ public class AuthenticateServiceTests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-                () => _authenticateService.LoginAsync(loginRequest)
+                () => _authenticateService.LoginServiceAsync(loginRequest)
             );
             Assert.Equal("Invalid credentials", exception.Message);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) =>
-                        o.ToString() ==
-                        $"Authentication failed for email: {loginRequest.Email} with message: {authResponse.Message}"),
-                    It.IsAny<Exception>(),
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-                Times.Once);
         }
     }
 
@@ -219,33 +163,12 @@ public class AuthenticateServiceTests
                 .ReturnsAsync(tokenResponse);
 
             // Act
-            var result = await _authenticateService.RegisterAsync(registerRequest);
+            var result = await _authenticateService.RegisterServiceAsync(registerRequest);
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal(tokenResponse.Token, result.Token);
             Assert.Equal(tokenResponse.RefreshToken, result.RefreshToken);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) =>
-                        o.ToString() == $"RegisterAsync called with email: {registerRequest.Email}"),
-                    It.IsAny<Exception>(),
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-                Times.Once);
-
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) =>
-                        o.ToString() == $"Registration successful for email: {registerRequest.Email}"),
-                    It.IsAny<Exception>(),
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-                Times.Once);
         }
 
         [Fact]
@@ -262,21 +185,9 @@ public class AuthenticateServiceTests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-                () => _authenticateService.RegisterAsync(registerRequest)
+                () => _authenticateService.RegisterServiceAsync(registerRequest)
             );
             Assert.Equal("Registration failed.", exception.Message);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) =>
-                        o.ToString() ==
-                        $"Registration failed for email: {registerRequest.Email} with message: {registerResponse.Message}"),
-                    It.IsAny<Exception>(),
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-                Times.Once);
         }
     }
 
@@ -303,22 +214,12 @@ public class AuthenticateServiceTests
                 .ReturnsAsync(tokenResponse);
 
             // Act
-            var result = await _authenticateService.UpdateUserDtoAsync(updateRequest, user.Id);
+            var result = await _authenticateService.UpdateUserServiceAsync(updateRequest, user.Id);
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal(tokenResponse.Token, result.Token);
             Assert.Equal(tokenResponse.RefreshToken, result.RefreshToken);
-
-            // Verify logging
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString() == $"UpdateAsync called for userId: {user.Id}"),
-                    It.IsAny<Exception>(),
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
-                Times.Once);
         }
 
         [Fact]
@@ -334,7 +235,7 @@ public class AuthenticateServiceTests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-                () => _authenticateService.UpdateUserDtoAsync(updateRequest, "1")
+                () => _authenticateService.UpdateUserServiceAsync(updateRequest, "1")
             );
             Assert.Equal("Failed to update profile.", exception.Message);
         }
@@ -353,7 +254,7 @@ public class AuthenticateServiceTests
             _repositoryMock.Setup(r => r.ChangePasswordAsync(It.IsAny<ChangePasswordDtoRequest>())).ReturnsAsync(true);
 
             // Act
-            var result = await _authenticateService.ChangePasswordAsync(changePasswordRequest, user.Id);
+            var result = await _authenticateService.ChangePasswordServiceAsync(changePasswordRequest, user.Id);
 
             // Assert
             Assert.True(result);
@@ -369,7 +270,7 @@ public class AuthenticateServiceTests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-                () => _authenticateService.ChangePasswordAsync(changePasswordRequest, "1")
+                () => _authenticateService.ChangePasswordServiceAsync(changePasswordRequest, "1")
             );
             Assert.Equal("User not found", exception.Message);
         }
@@ -389,7 +290,7 @@ public class AuthenticateServiceTests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-                () => _authenticateService.ChangePasswordAsync(changePasswordRequest, user.Id)
+                () => _authenticateService.ChangePasswordServiceAsync(changePasswordRequest, user.Id)
             );
             Assert.Equal("Unauthorized attempt to change password", exception.Message);
         }
@@ -404,21 +305,11 @@ public class AuthenticateServiceTests
             _repositoryMock.Setup(r => r.LogoutAsync()).Returns(Task.CompletedTask);
 
             // Act
-            await _authenticateService.LogoutAsync();
+            await _authenticateService.LogoutServiceAsync();
 
             // Assert
             _repositoryMock.Verify(
                 r => r.LogoutAsync(),
-                Times.Once);
-
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) =>
-                        o.ToString() == "LogoutAsync called"),
-                    null,
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
                 Times.Once);
         }
     }
@@ -434,23 +325,13 @@ public class AuthenticateServiceTests
             _repositoryMock.Setup(r => r.ForgotPasswordAsync(email, newPassword)).ReturnsAsync(true);
 
             // Act
-            var result = await _authenticateService.ForgotPasswordAsync(email, newPassword);
+            var result = await _authenticateService.ForgotPasswordServiceAsync(email, newPassword);
 
             // Assert
             Assert.True(result);
 
             _repositoryMock.Verify(
                 r => r.ForgotPasswordAsync(email, newPassword),
-                Times.Once);
-
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) =>
-                        o.ToString() == $"ForgotPasswordAsync called for email: {email}"),
-                    null,
-                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!),
                 Times.Once);
         }
     }
@@ -465,18 +346,8 @@ public class AuthenticateServiceTests
             _tokenServiceMock.Setup(ts => ts.ValidateToken(It.IsAny<string>())).Returns((ClaimsPrincipal)null!);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(() => _authenticateService.RefreshTokenAsync(request));
-            var innerException = Assert.IsType<UnauthorizedAccessException>(exception.InnerException);
-            Assert.Equal("Invalid refresh token", innerException.Message);
-
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Invalid refresh token provided")),
-                    null,
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
-                Times.Once);
+            var exception = await Assert.ThrowsAsync<TokenRefreshException>(() => _authenticateService.RefreshTokenServiceAsync(request));
+            Assert.Equal("[REFRESH_TOKEN] Error processing token refresh request.", exception.Message);
         }
 
         [Fact]
@@ -492,18 +363,8 @@ public class AuthenticateServiceTests
             _tokenServiceMock.Setup(ts => ts.ValidateToken(It.IsAny<string>())).Returns(claimsPrincipal);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(() => _authenticateService.RefreshTokenAsync(request));
-            Assert.IsType<UnauthorizedAccessException>(exception.InnerException);
-            Assert.Equal("Invalid token", exception.InnerException.Message);
-
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Email claim not found in token")),
-                    null,
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
-                Times.Once);
+            var exception = await Assert.ThrowsAsync<TokenRefreshException>(() => _authenticateService.RefreshTokenServiceAsync(request));
+            Assert.Equal("[REFRESH_TOKEN] Error processing token refresh request.", exception.Message);
         }
 
         [Fact]
@@ -519,18 +380,8 @@ public class AuthenticateServiceTests
             _repositoryMock.Setup(r => r.GetUserProfileAsync(It.IsAny<string>())).ReturnsAsync((User)null!);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(() => _authenticateService.RefreshTokenAsync(request));
-            var innerException = Assert.IsType<UnauthorizedAccessException>(exception.InnerException);
-            Assert.Equal("User not found", innerException.Message);
-
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("User not found for email")),
-                    null,
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
-                Times.Once);
+            var exception = await Assert.ThrowsAsync<TokenRefreshException>(() => _authenticateService.RefreshTokenServiceAsync(request));
+            Assert.Equal("[REFRESH_TOKEN] Error processing token refresh request.", exception.Message);
         }
 
         [Fact]
@@ -553,21 +404,12 @@ public class AuthenticateServiceTests
                 .ReturnsAsync(tokenResponse);
 
             // Act
-            var result = await _authenticateService.RefreshTokenAsync(request);
+            var result = await _authenticateService.RefreshTokenServiceAsync(request);
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal("newAccessToken", result.Token);
             Assert.Equal("newRefreshToken", result.RefreshToken);
-
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Token refreshed successfully for user")),
-                    null,
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
-                Times.Once);
         }
     }
 
@@ -581,7 +423,7 @@ public class AuthenticateServiceTests
             _tokenManagerServiceMock.Setup(tms => tms.RevokedTokenAsync(tokenValue)).ReturnsAsync(true);
 
             // Act
-            var result = await _authenticateService.RevokedTokenAsync(tokenValue);
+            var result = await _authenticateService.RevokedTokenServiceAsync(tokenValue);
 
             // Assert
             Assert.True(result);
@@ -596,7 +438,7 @@ public class AuthenticateServiceTests
             _tokenManagerServiceMock.Setup(tms => tms.RevokedTokenAsync(tokenValue)).ReturnsAsync(false);
 
             // Act
-            var result = await _authenticateService.RevokedTokenAsync(tokenValue);
+            var result = await _authenticateService.RevokedTokenServiceAsync(tokenValue);
 
             // Assert
             Assert.False(result);
@@ -614,7 +456,7 @@ public class AuthenticateServiceTests
             _tokenManagerServiceMock.Setup(tms => tms.ExpiredTokenAsync(tokenValue)).ReturnsAsync(true);
 
             // Act
-            var result = await _authenticateService.ExpiredTokenAsync(tokenValue);
+            var result = await _authenticateService.ExpiredTokenServiceAsync(tokenValue);
 
             // Assert
             Assert.True(result);
@@ -629,7 +471,7 @@ public class AuthenticateServiceTests
             _tokenManagerServiceMock.Setup(tms => tms.ExpiredTokenAsync(tokenValue)).ReturnsAsync(false);
 
             // Act
-            var result = await _authenticateService.ExpiredTokenAsync(tokenValue);
+            var result = await _authenticateService.ExpiredTokenServiceAsync(tokenValue);
 
             // Assert
             Assert.False(result);

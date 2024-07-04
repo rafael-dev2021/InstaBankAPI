@@ -3,14 +3,15 @@ using System.Security.Claims;
 using System.Text;
 using AuthenticateAPI.Models;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 
 namespace AuthenticateAPI.Security;
  
-public class TokenService(JwtSettings jwtSettings, ILogger<TokenService> logger) : ITokenService
+public class TokenService(JwtSettings jwtSettings) : ITokenService
 {
     public string GenerateToken(User user, int expirationToken)
     {
-        logger.LogInformation("Generating token for user: {Email}", user.Email);
+        Log.Information("[GENERATE_TOKEN] Generating token for user: [{Email}]", user.Email);
 
         var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey!);
         var tokenHandler = new JwtSecurityTokenHandler();
@@ -37,25 +38,25 @@ public class TokenService(JwtSettings jwtSettings, ILogger<TokenService> logger)
         var token = tokenHandler.CreateToken(tokenDescriptor);
         var tokenString = tokenHandler.WriteToken(token);
 
-        logger.LogInformation("Token generated successfully for user: {Email}", user.Email);
+        Log.Information("[GENERATE_TOKEN] Token generated successfully for user: [{Email}]", user.Email);
         return tokenString;
     }
 
     public string GenerateAccessToken(User user)
     {
-        logger.LogInformation("Generating access token for user: {Email}", user.Email);
+        Log.Information("[ACCESS_TOKEN] Generating access token for user: [{Email}]", user.Email);
         return GenerateToken(user, jwtSettings.ExpirationTokenMinutes);
     }
 
     public string GenerateRefreshToken(User user)
     {
-        logger.LogInformation("Generating refresh token for user: {Email}", user.Email);
+        Log.Information("[REFRESH_TOKEN] Generating refresh token for user: [{Email}]", user.Email);
         return GenerateToken(user, jwtSettings.RefreshTokenExpirationMinutes);
     }
 
     public ClaimsPrincipal? ValidateToken(string token)
     {
-        logger.LogInformation("Validating token");
+        Log.Information("[VALID_TOKEN] Validating token");
         var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey!);
         var tokenHandler = new JwtSecurityTokenHandler();
         var validationParameters = new TokenValidationParameters
@@ -72,12 +73,12 @@ public class TokenService(JwtSettings jwtSettings, ILogger<TokenService> logger)
         try
         {
             var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
-            logger.LogInformation("Token validated successfully");
+            Log.Information("[VALID_TOKEN] Token validated successfully");
             return principal;
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex,"Token validation failed: {Message}", ex.Message);
+            Log.Error(ex,"[VALID_TOKEN] Token validation failed: {Message}", ex.Message);
             return null;
         }
     }

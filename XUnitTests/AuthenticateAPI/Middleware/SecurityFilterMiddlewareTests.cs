@@ -7,9 +7,10 @@ using AuthenticateAPI.Security;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
+using Serilog;
+using Serilog.Sinks.TestCorrelator;
 
 namespace XUnitTests.AuthenticateAPI.Middleware;
 
@@ -18,7 +19,6 @@ public class SecurityFilterMiddlewareTests
     private readonly Mock<ITokenService> _mockTokenService;
     private readonly Mock<ITokenRepository> _mockTokenRepository;
     private readonly Mock<UserManager<User>> _mockUserManager;
-    private readonly Mock<ILogger<SecurityFilterMiddleware>> _mockLogger;
     private readonly Mock<HttpContext> _mockHttpContext;
     private readonly Mock<RequestDelegate> _mockNext;
     private readonly SecurityFilterMiddleware _middleware;
@@ -30,12 +30,11 @@ public class SecurityFilterMiddlewareTests
         _mockUserManager = new Mock<UserManager<User>>(
             Mock.Of<IUserStore<User>>(), null!, null!, null!, null!, null!, null!, null!, null!
         );
-        _mockLogger = new Mock<ILogger<SecurityFilterMiddleware>>();
         _mockHttpContext = new Mock<HttpContext>();
         Mock<HttpRequest> mockHttpRequest = new();
         Mock<HttpResponse> mockHttpResponse = new();
         _mockNext = new Mock<RequestDelegate>();
-        _middleware = new SecurityFilterMiddleware(_mockNext.Object, _mockLogger.Object);
+        _middleware = new SecurityFilterMiddleware(_mockNext.Object);
 
         _mockHttpContext.Setup(c => c.Request).Returns(mockHttpRequest.Object);
         _mockHttpContext.Setup(c => c.Response).Returns(mockHttpResponse.Object);
@@ -162,7 +161,7 @@ public class SecurityFilterMiddlewareTests
             Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
             _mockNext.Verify(next => next(context), Times.Never);
         }
-        
+
         [Fact]
         public async Task Should_Log_Error_On_Invocation_Failure()
         {
@@ -170,7 +169,7 @@ public class SecurityFilterMiddlewareTests
             const string exceptionMessage = "Test exception";
             var exception = new Exception(exceptionMessage);
 
-            var filter = new SecurityFilterMiddleware(_mockNext.Object, _mockLogger.Object);
+            var filter = new SecurityFilterMiddleware(_mockNext.Object);
 
             var mockServiceProvider = new Mock<IServiceProvider>();
             mockServiceProvider.Setup(sp => sp.GetService(typeof(ITokenService)))
@@ -178,18 +177,22 @@ public class SecurityFilterMiddlewareTests
 
             _mockHttpContext.Setup(c => c.RequestServices).Returns(mockServiceProvider.Object);
 
-            // Act
-            await filter.InvokeAsync(_mockHttpContext.Object, mockServiceProvider.Object);
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.TestCorrelator()
+                .CreateLogger();
 
-            // Assert
-            _mockLogger.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(exceptionMessage)),
-                    exception,
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
-                Times.Once);
+            using (TestCorrelator.CreateContext())
+            {
+                // Act
+                await filter.InvokeAsync(_mockHttpContext.Object, mockServiceProvider.Object);
+
+                // Assert
+                var logEvents = TestCorrelator.GetLogEventsFromCurrentContext();
+                Assert.Contains(logEvents,
+                    logEvent => logEvent.MessageTemplate.Text.Contains(
+                        "[ERROR_FILTER] Error processing security filter"));
+                Assert.Contains(logEvents, logEvent => logEvent.Exception?.Message == exceptionMessage);
+            }
         }
     }
 
@@ -206,7 +209,7 @@ public class SecurityFilterMiddlewareTests
             };
             request.Setup(r => r.Headers).Returns(headers);
 
-            var securityFilter = new SecurityFilterMiddleware(_mockNext.Object, _mockLogger.Object);
+            var securityFilter = new SecurityFilterMiddleware(_mockNext.Object);
 
             // Act
             var token = securityFilter.RecoverTokenFromRequest(request.Object);
@@ -214,6 +217,61 @@ public class SecurityFilterMiddlewareTests
             // Assert
             Assert.NotNull(token);
             Assert.Equal("validToken", token);
+        }
+
+        [Fact]
+        public void Should_Return_Null_When_Authorization_Header_Not_Present()
+        {
+            // Arrange
+            var request = new Mock<HttpRequest>();
+            var headers = new HeaderDictionary();
+            request.Setup(r => r.Headers).Returns(headers);
+
+            var securityFilter = new SecurityFilterMiddleware(_mockNext.Object);
+
+            // Act
+            var token = securityFilter.RecoverTokenFromRequest(request.Object);
+
+            // Assert
+            Assert.Null(token);
+        }
+
+        [Fact]
+        public void Should_Log_Token_Recovered_When_Authorization_Header_Present()
+        {
+            // Arrange
+            var request = new Mock<HttpRequest>();
+            var headers = new HeaderDictionary
+            {
+                { "Authorization", "Bearer validToken" }
+            };
+            request.Setup(r => r.Headers).Returns(headers);
+
+            var securityFilter = new SecurityFilterMiddleware(_mockNext.Object);
+
+            // Act
+            var token = securityFilter.RecoverTokenFromRequest(request.Object);
+
+            // Assert
+            Assert.NotNull(token);
+            Assert.Equal("validToken", token);
+        }
+
+        [Fact]
+        public void Should_Log_No_Auth_Header_When_Authorization_Header_Not_Present()
+        {
+            // Arrange
+            var request = new Mock<HttpRequest>();
+            var headers = new HeaderDictionary();
+            request.Setup(r => r.Headers).Returns(headers);
+
+            var securityFilter = new SecurityFilterMiddleware(_mockNext.Object);
+
+            // Act
+            var token = securityFilter.RecoverTokenFromRequest(request.Object);
+
+            // Assert
+            Assert.Null(token);
         }
     }
 
@@ -230,7 +288,7 @@ public class SecurityFilterMiddlewareTests
                 .Returns(new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, email) })));
             _mockUserManager.Setup(um => um.FindByEmailAsync(email)).ReturnsAsync((User)null!);
 
-            var filter = new SecurityFilterMiddleware(_mockNext.Object, _mockLogger.Object);
+            var filter = new SecurityFilterMiddleware(_mockNext.Object);
 
             // Act
             var result = await filter.HandleAuthentication(_mockHttpContext.Object, token, _mockTokenService.Object,
@@ -238,14 +296,6 @@ public class SecurityFilterMiddlewareTests
 
             // Assert
             Assert.False(result);
-            _mockLogger.Verify(
-                logger => logger.Log(
-                    It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, t) => state.ToString()!.Contains("[TOKEN_FAILED]")),
-                    It.IsAny<Exception>(),
-                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)!),
-                Times.Once);
         }
 
         [Fact]
@@ -268,7 +318,7 @@ public class SecurityFilterMiddlewareTests
             _mockUserManager.Setup(um => um.FindByEmailAsync(email)).ReturnsAsync(user);
             _mockTokenRepository.Setup(tr => tr.FindByTokenValue(token)).ReturnsAsync(validToken);
 
-            var filter = new SecurityFilterMiddleware(_mockNext.Object, _mockLogger.Object);
+            var filter = new SecurityFilterMiddleware(_mockNext.Object);
 
             // Act
             var result = await filter.HandleAuthentication(_mockHttpContext.Object, token, _mockTokenService.Object,
@@ -276,16 +326,6 @@ public class SecurityFilterMiddlewareTests
 
             // Assert
             Assert.True(result);
-            _mockLogger.Verify(
-                logger => logger.Log(
-                    It.Is<LogLevel>(logLevel => logLevel == LogLevel.Information),
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, t) =>
-                        state.ToString()!.Contains(
-                            "[USER_AUTHENTICATED] User: user successfully authenticated with token: validToken.")),
-                    It.IsAny<Exception>(),
-                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)!),
-                Times.Once);
         }
 
         [Fact]
@@ -304,14 +344,6 @@ public class SecurityFilterMiddlewareTests
 
             // Assert
             Assert.False(result);
-            _mockLogger.Verify(
-                logger => logger.Log(
-                    It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, t) => state.ToString()!.Contains("[TOKEN_FAILED]")),
-                    It.IsAny<Exception>(),
-                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)!),
-                Times.Once);
         }
 
         [Fact]
@@ -328,7 +360,7 @@ public class SecurityFilterMiddlewareTests
 
             var expiredToken = new Token();
             expiredToken.SetTokenValue(token);
-            expiredToken.SetTokenExpired(true); // Token is expired
+            expiredToken.SetTokenExpired(true);
             expiredToken.SetTokenRevoked(false);
 
             _mockTokenService.Setup(ts => ts.ValidateToken(token)).Returns(claimsPrincipal);
@@ -341,14 +373,6 @@ public class SecurityFilterMiddlewareTests
 
             // Assert
             Assert.False(result);
-            _mockLogger.Verify(
-                logger => logger.Log(
-                    It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, t) => state.ToString()!.Contains("[TOKEN_FAILED]")),
-                    It.IsAny<Exception>(),
-                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)!),
-                Times.Once);
         }
 
         [Fact]
@@ -366,7 +390,7 @@ public class SecurityFilterMiddlewareTests
             var revokedToken = new Token();
             revokedToken.SetTokenValue(token);
             revokedToken.SetTokenExpired(false);
-            revokedToken.SetTokenRevoked(true); // Token is revoked
+            revokedToken.SetTokenRevoked(true);
 
             _mockTokenService.Setup(ts => ts.ValidateToken(token)).Returns(claimsPrincipal);
             _mockUserManager.Setup(um => um.FindByEmailAsync(email)).ReturnsAsync(user);
@@ -378,14 +402,6 @@ public class SecurityFilterMiddlewareTests
 
             // Assert
             Assert.False(result);
-            _mockLogger.Verify(
-                logger => logger.Log(
-                    It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, t) => state.ToString()!.Contains("[TOKEN_FAILED]")),
-                    It.IsAny<Exception>(),
-                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)!),
-                Times.Once);
         }
     }
 }

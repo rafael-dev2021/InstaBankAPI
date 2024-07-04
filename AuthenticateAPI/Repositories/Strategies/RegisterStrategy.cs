@@ -5,6 +5,7 @@ using AuthenticateAPI.Models;
 using AuthenticateAPI.Repositories.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace AuthenticateAPI.Repositories.Strategies;
 
@@ -13,51 +14,70 @@ public class RegisterStrategy(
     UserManager<User> userManager,
     AppDbContext appDbContext) : IRegisterStrategy
 {
-    private async Task<bool> IsCpfAlreadyUsed(string cpf) =>
-        await appDbContext.Users.FirstOrDefaultAsync(x => x.Cpf == cpf) != null;
-
-    private async Task<bool> IsEmailAlreadyUsed(string email) =>
-        await appDbContext.Users.FirstOrDefaultAsync(x => x.Email == email) != null;
-
-    private async Task<bool> IsPhoneNumberAlreadyUsed(string phone) =>
-        await appDbContext.Users.FirstOrDefaultAsync(x => x.PhoneNumber == phone) != null;
-
-    public async Task<List<string>> ValidateAsync(string? cpf, string? email, string? phoneNumber)
+    public async Task<RegisteredDtoResponse> CreateUserAsync(RegisterDtoRequest request)
     {
+        Log.Information("[REGISTRATION] Attempting to register user with Email= [{Email}]", request.Email);
+
+        if (!IsPasswordConfirmed(request))
+        {
+            Log.Warning("[REGISTRATION] Password and confirm password do not match for Email= [{Email}]",
+                request.Email);
+            return new RegisteredDtoResponse(false, "Password and confirm password do not match.");
+        }
+
+        var validationErrors = await ValidateUserDetailsAsync(request.Cpf, request.Email, request.PhoneNumber);
+
+        if (validationErrors.Count != 0)
+        {
+            return new RegisteredDtoResponse(false, string.Join(", ", validationErrors));
+        }
+
+        var appUser = CreateUser(request);
+        var result = await userManager.CreateAsync(appUser, request.Password);
+
+        if (!result.Succeeded)
+        {
+            Log.Warning("[REGISTRATION] User creation failed for Email= [{Email}]", request.Email);
+            return new RegisteredDtoResponse(false, "Registration failed.");
+        }
+
+        await AssignUserRoleAndSignInAsync(appUser);
+        Log.Information("[REGISTRATION] User registered and signed in successfully with Email= [{Email}]",
+            request.Email);
+        return new RegisteredDtoResponse(true, "Registration successful.");
+    }
+
+    private static bool IsPasswordConfirmed(RegisterDtoRequest request)
+    {
+        return request.Password == request.ConfirmPassword;
+    }
+
+    private async Task<List<string>> ValidateUserDetailsAsync(string? cpf, string? email, string? phoneNumber)
+    {
+        Log.Information(
+            "[REGISTRATION] Validating user details: CPF= [{Cpf}], Email= [{Email}], PhoneNumber= [{PhoneNumber}]",
+            cpf, email, phoneNumber);
+
         var validationErrors = new List<string>();
 
-        var errors = new Dictionary<Func<Task<bool>>, string>
-        {
-            { () => IsCpfAlreadyUsed(cpf!), "CPF already used." },
-            { () => IsEmailAlreadyUsed(email!), "Email already used." },
-            { () => IsPhoneNumberAlreadyUsed(phoneNumber!), "Phone number already used." }
-        };
+        if (await IsCpfAlreadyUsedAsync(cpf!)) validationErrors.Add("[CPF already used]");
+        if (await IsEmailAlreadyUsedAsync(email!)) validationErrors.Add("[Email already used]");
+        if (await IsPhoneNumberAlreadyUsedAsync(phoneNumber!)) validationErrors.Add("[Phone number already used]");
 
-        foreach (var error in errors)
+        if (validationErrors.Count != 0)
         {
-            if (await error.Key())
-            {
-                validationErrors.Add(error.Value);
-            }
+            Log.Warning("[REGISTRATION] Validation errors: {Errors}.", string.Join(", ", validationErrors));
+        }
+        else
+        {
+            Log.Information("[REGISTRATION] Validation successful.");
         }
 
         return validationErrors;
     }
 
-    public async Task<RegisteredDtoResponse> CreateUserAsync(RegisterDtoRequest request)
+    private static User CreateUser(RegisterDtoRequest request)
     {
-        if (request.Password != request.ConfirmPassword)
-        {
-            return new RegisteredDtoResponse(false, "Password and confirm password do not match.");
-        }
-        
-        var validationErrors = await ValidateAsync(request.Cpf, request.Email, request.PhoneNumber);
-
-        if (validationErrors.Count > 0)
-        {
-            return new RegisteredDtoResponse(false, string.Join(", ", validationErrors));
-        }
-
         var appUser = new User
         {
             Email = request.Email,
@@ -69,12 +89,21 @@ public class RegisterStrategy(
         appUser.SetCpf(request.Cpf);
         appUser.SetRole("User");
 
-        var result = await userManager.CreateAsync(appUser, request.Password);
+        return appUser;
+    }
 
-        if (!result.Succeeded) return new RegisteredDtoResponse(false, "Registration failed.");
-
+    private async Task AssignUserRoleAndSignInAsync(User appUser)
+    {
         await userManager.AddToRoleAsync(appUser, "User");
         await signInManager.SignInAsync(appUser, isPersistent: false);
-        return new RegisteredDtoResponse(true, "Registration successful.");
     }
+
+    private async Task<bool> IsCpfAlreadyUsedAsync(string cpf) =>
+        await appDbContext.Users.FirstOrDefaultAsync(x => x.Cpf == cpf) != null;
+
+    private async Task<bool> IsEmailAlreadyUsedAsync(string email) =>
+        await appDbContext.Users.FirstOrDefaultAsync(x => x.Email == email) != null;
+
+    private async Task<bool> IsPhoneNumberAlreadyUsedAsync(string phone) =>
+        await appDbContext.Users.FirstOrDefaultAsync(x => x.PhoneNumber == phone) != null;
 }

@@ -5,6 +5,8 @@ using BankingServiceAPI.Exceptions;
 using BankingServiceAPI.Services.Interfaces;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
+using Newtonsoft.Json;
 
 namespace BankingServiceAPI.Endpoints;
 
@@ -12,18 +14,18 @@ public static class BankAccountEndpoint
 {
     public static void MapBankAccountEndpoints(this WebApplication app)
     {
-        MapGetEndpoint<IEnumerable<BankAccountDtoResponse>>(
+        MapGetBankAccountsEndpoint<IEnumerable<BankAccountDtoResponse>>(
             app,
             "/v1/bank/accounts",
             async service => await service.GetEntitiesDtoAsync(),
-            requireAuthentication: true
+            "cached_bank_accounts_list"
         );
 
-        MapGetEndpoint<BankAccountDtoResponse>(
+        MapGetBankAccountByIdEndpoint<BankAccountDtoResponse>(
             app,
             "/v1/bank/find/{id:int}",
             async (service, id) => (await service.GetEntityDtoByIdAsync(id))!,
-            requireAuthentication: true
+            "cached_bank_account_by_id"
         );
 
         MapPostEndpoint<BankAccountDtoRequest>(
@@ -40,62 +42,48 @@ public static class BankAccountEndpoint
         MapDeleteEndpoint(
             app,
             "/v1/bank/delete/{id:int}",
-            async (service, id) => await service.DeleteEntityDtoAsync(id),
-            requireAuthentication: true
+            async (service, id) => await service.DeleteEntityDtoAsync(id)
         );
     }
 
-    private static void MapGetEndpoint<T>(
+    private static void MapGetBankAccountsEndpoint<T>(
         WebApplication app,
         string route,
         Func<IBankAccountDtoService, Task<T>> handler,
-        bool requireAuthentication = true)
+        string cacheKey)
     {
         app.MapGet(route, async (
             [FromServices] IBankAccountDtoService service,
+            [FromServices] IDistributedCache cache,
             HttpContext context) =>
         {
-            try
-            {
-                var authResult =
-                    AuthenticationRules.CheckAuthenticationAndAuthorization(context, requireAuthentication);
-                if (authResult != null)
-                {
-                    return authResult;
-                }
+            var authResult = AuthenticationRules.CheckAdminRole(context);
+            if (authResult != null)
+                return authResult;
 
-                var result = await handler(service);
-                return Results.Ok(result);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return AuthenticationRules.HandleUnauthorizedAccessException(ex);
-            }
-        });
+            return await HandleCacheAsync(cache, cacheKey, () => handler(service));
+        }).RequireAuthorization();
     }
 
-    private static void MapGetEndpoint<T>(
+    private static void MapGetBankAccountByIdEndpoint<T>(
         WebApplication app,
         string route,
         Func<IBankAccountDtoService, int?, Task<T>> handler,
-        bool requireAuthentication = true)
+        string cacheKey)
     {
         app.MapGet(route, async (
             [FromServices] IBankAccountDtoService service,
+            [FromServices] IDistributedCache cache,
             int? id,
             HttpContext context) =>
         {
             try
             {
-                var authResult =
-                    AuthenticationRules.CheckAuthenticationAndAuthorization(context, requireAuthentication);
+                var authResult = AuthenticationRules.CheckAdminRole(context);
                 if (authResult != null)
-                {
                     return authResult;
-                }
 
-                var result = await handler(service, id);
-                return Results.Ok(result);
+                return await HandleCacheAsync(cache, cacheKey + id, () => handler(service, id));
             }
             catch (GetIdNotFoundException ex)
             {
@@ -114,6 +102,7 @@ public static class BankAccountEndpoint
             [FromServices] IBankAccountDtoService service,
             [FromBody] T request,
             [FromServices] IValidator<T> validator,
+            [FromServices] IDistributedCache cache,
             HttpContext context) =>
         {
             try
@@ -129,6 +118,8 @@ public static class BankAccountEndpoint
                     return validationResult;
                 }
 
+                await cache.RemoveAsync("cached_bank_accounts_list");
+
                 var result = await handler(service, request, context);
                 return result;
             }
@@ -142,22 +133,24 @@ public static class BankAccountEndpoint
     private static void MapDeleteEndpoint(
         WebApplication app,
         string route,
-        Func<IBankAccountDtoService, int?, Task> handler,
-        bool requireAuthentication = true)
+        Func<IBankAccountDtoService, int?, Task> handler)
     {
         app.MapDelete(route, async (
             [FromServices] IBankAccountDtoService service,
+            [FromServices] IDistributedCache cache,
             int? id,
             HttpContext context) =>
         {
             try
             {
-                var authResult =
-                    AuthenticationRules.CheckAuthenticationAndAuthorization(context, requireAuthentication);
+                var authResult = AuthenticationRules.CheckAdminRole(context);
                 if (authResult != null)
                 {
                     return authResult;
                 }
+
+                await cache.RemoveAsync("cached_bank_accounts_list");
+                await cache.RemoveAsync("cached_bank_account_by_id" + id);
 
                 await handler(service, id);
                 return Results.Ok();
@@ -167,5 +160,28 @@ public static class BankAccountEndpoint
                 return Results.NotFound(new { message = ex.Message });
             }
         });
+    }
+
+    public static async Task<IResult> HandleCacheAsync<T>(
+        IDistributedCache cache,
+        string cacheKey,
+        Func<Task<T>> fetchFromService)
+    {
+        var cachedData = await cache.GetStringAsync(cacheKey);
+        if (!string.IsNullOrEmpty(cachedData))
+        {
+            var deserializedData = JsonConvert.DeserializeObject<T>(cachedData);
+            return Results.Ok(deserializedData);
+        }
+
+        var result = await fetchFromService();
+        var serializedData = JsonConvert.SerializeObject(result);
+
+        await cache.SetStringAsync(cacheKey, serializedData, new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+        });
+
+        return Results.Ok(result);
     }
 }

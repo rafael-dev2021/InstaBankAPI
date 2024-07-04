@@ -5,13 +5,13 @@ using BankingServiceAPI.Exceptions;
 using BankingServiceAPI.Models;
 using BankingServiceAPI.Repositories.Interfaces;
 using BankingServiceAPI.Services.Interfaces;
+using Serilog;
 
 namespace BankingServiceAPI.Services;
 
 public class BankAccountDtoService(
     IBankAccountRepository repository,
     IMapper mapper,
-    ILogger<BankAccountDtoService> logger,
     IUserContextService userContextService) : IBankAccountDtoService
 {
     private const string Message = "An unexpected error occurred while processing the request.";
@@ -21,19 +21,19 @@ public class BankAccountDtoService(
         try
         {
             var entities = await repository.GetEntitiesAsync();
-            logger.LogInformation("Returning all entities");
+            Log.Information("[GET_ENTITIES] Retrieved all bank accounts.");
             return !entities.Any() ? [] : mapper.Map<IEnumerable<BankAccountDtoResponse>>(entities);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error while getting all entities");
+            Log.Error(ex, "[GET_ENTITIES] Error occurred while retrieving all bank accounts.");
             throw new BankAccountDtoServiceException(Message, ex);
         }
     }
 
     public async Task<BankAccountDtoResponse?> GetEntityDtoByIdAsync(int? id)
     {
-        logger.LogInformation("Getting entity by id: {Id}", id);
+        Log.Information("[GET_ENTITY_BY_ID] Fetching bank account with ID [{Id}].", id);
         var bankAccount = await GetBankAccountOrThrowAsync(id, "get");
 
         return mapper.Map<BankAccountDtoResponse>(bankAccount);
@@ -53,23 +53,24 @@ public class BankAccountDtoService(
 
             var createdBankAccount = await repository.GetEntityByIdAsync(bankAccount.Id);
 
-            var bankAccountDtoResponse = mapper.Map<BankAccountDtoResponse>(createdBankAccount);
-
-            return bankAccountDtoResponse;
+            Log.Information("[ADD_ENTITY] Created new bank account with ID [{Id}] for user [{UserId}].", bankAccount.Id,
+                user.Id);
+            return mapper.Map<BankAccountDtoResponse>(createdBankAccount);
         }
         catch (Exception ex)
         {
+            Log.Error(ex, "[ADD_ENTITY] Error occurred while creating new bank account.");
             throw new BankAccountDtoServiceException("An unexpected error occurred while processing the request.", ex);
         }
     }
 
     public async Task DeleteEntityDtoAsync(int? id)
     {
-        logger.LogInformation("Deleting entity with id: {Id}", id);
+        Log.Information("[DELETE_ENTITY] Deleting bank account with ID [{Id}].", id);
         var bankAccount = await GetBankAccountOrThrowAsync(id, "delete");
 
         await repository.DeleteEntityAsync(bankAccount.Id);
-        logger.LogInformation("Entity with id: {Id} deleted successfully", id);
+        Log.Information("[DELETE_ENTITY] Successfully deleted bank account with ID [{Id}].", id);
     }
 
     private async Task<BankAccount> GetBankAccountOrThrowAsync(int? id, string action)
@@ -77,7 +78,7 @@ public class BankAccountDtoService(
         var bankAccount = await repository.GetEntityByIdAsync(id);
         if (bankAccount != null) return bankAccount;
 
-        logger.LogWarning("Could not find bank account '{id}' for action {Action}", id, action);
+        Log.Warning("[GET_BANK_ACCOUNT] Bank account with ID [{Id}] not found for action [{Action}].", id, action);
         throw new GetIdNotFoundException($"Could not find bank account id: '{id}' ");
     }
 }

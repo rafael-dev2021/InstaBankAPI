@@ -4,56 +4,65 @@ using BankingServiceAPI.Exceptions;
 using BankingServiceAPI.Models;
 using BankingServiceAPI.Repositories.Interfaces;
 using BankingServiceAPI.Services.Interfaces;
+using Serilog;
 
 namespace BankingServiceAPI.Services;
 
 public class WithdrawDtoService(
     IWithdrawRepository withdrawRepository,
     IBankTransactionRepository bankTransactionRepository,
-    ILogger<WithdrawDtoService> logger,
+    ITransactionLogService transactionCreationService,
     IMapper mapper) : IWithdrawDtoService
 {
     public async Task<WithdrawDtoResponse> WithdrawDtoAsync(string userId, int accountNumber, decimal amount)
     {
-        logger.LogInformation("Attempting to withdraw {Amount} from account number {AccountNumber} for user {UserId}",
+        Log.Information(
+            "[WITHDRAW] Attempting to withdraw [{Amount}] from account number [{AccountNumber}] for user [{UserId}]",
             amount, accountNumber, userId);
 
         var account = await GetAccountAsync(userId, accountNumber);
 
         ValidateUserAuthorization(userId, account);
 
-        var withdraw = CreateWithdraw(account, amount);
+        var withdraw = await ExecuteWithdrawAsync(account, amount);
 
         await SaveWithdrawAsync(withdraw);
 
+        Log.Information(
+            "[WITHDRAW] Withdrawal of [{Amount}] from account number [{AccountNumber}] for user [{UserId}] successfully completed",
+            withdraw.Amount, withdraw.AccountOrigin!.AccountNumber, userId);
+
         return mapper.Map<WithdrawDtoResponse>(withdraw);
     }
-    
+
     private async Task<BankAccount> GetAccountAsync(string userId, int accountNumber)
     {
         var account = await withdrawRepository.GetByAccountNumberAsync(accountNumber);
         if (account == null)
         {
-            logger.LogWarning("Account number {AccountNumber} not found for user {UserId}", accountNumber, userId);
+            Log.Warning("[GET_ACCOUNT] Account number [{AccountNumber}] not found for user [{UserId}]", accountNumber,
+                userId);
             throw new AccountNotFoundException("Account not found.");
         }
 
-        logger.LogInformation("Bank account found: {UserName} {UserLastName}, proceeding with withdrawal",
+        Log.Information("[GET_ACCOUNT] Bank account found: [{UserName}] [{UserLastName}], proceeding with withdrawal",
             account.User!.Name, account.User!.LastName);
 
         return account;
     }
-    
-    private void ValidateUserAuthorization(string userId, BankAccount account)
+
+    private static void ValidateUserAuthorization(string userId, BankAccount account)
     {
         if (account.User!.Id == userId) return;
-        
-        logger.LogWarning("User {UserId} is not authorized to withdraw from account number {AccountNumber}", userId,
+
+        Log.Warning(
+            "[VALIDATE_USER_AUTHORIZATION] User [{UserId}] is not authorized to withdraw from account number [{AccountNumber}]",
+            userId,
             account.AccountNumber);
         throw new UnauthorizedAccessException("You are not authorized to perform this transaction.");
     }
 
-    private Withdraw CreateWithdraw(BankAccount account, decimal amount)
+    private static Task<Withdraw> ExecuteWithdrawAsync(BankAccount account, decimal amount)
     {
         var withdraw = new Withdraw();
         withdraw.SetAccountOrigin(account);
@@ -65,18 +74,31 @@ public class WithdrawDtoService(
 
         withdraw.Execute();
 
-        logger.LogInformation("Withdraw entity created for account number {AccountNumber} with amount {Amount}",
+        Log.Information(
+            "[EXECUTE_WITHDRAW] Withdraw entity created for account number [{AccountNumber}] with amount [{Amount}]",
             account.AccountNumber, amount);
 
-        return withdraw;
+        return Task.FromResult(withdraw);
     }
 
     private async Task SaveWithdrawAsync(Withdraw withdraw)
     {
         await bankTransactionRepository.CreateEntityAsync(withdraw);
 
-        logger.LogInformation(
-            "Withdrawal of {Amount} from account number {AccountNumber} successfully completed",
+        await CreateAndSaveTransactionLogAsync(withdraw);
+        Log.Information(
+            "[SAVE_WITHDRAW] Withdrawal of [{Amount}] from account number [{AccountNumber}] successfully completed",
             withdraw.Amount, withdraw.AccountOrigin!.AccountNumber);
+    }
+
+    private async Task CreateAndSaveTransactionLogAsync(Withdraw withdraw)
+    {
+        Log.Information("[CREATE_TRANSACTION_LOG] Creating transaction log for withdraw [{WithdrawId}]", withdraw.Id);
+
+        var transactionDetails = await transactionCreationService.CreateTransactionDetailsAsync(withdraw);
+        var transactionAudit = await transactionCreationService.CreateTransactionAuditAsync(withdraw);
+        await transactionCreationService.CreateTransactionLogAsync(withdraw, transactionDetails, transactionAudit);
+
+        Log.Information("[CREATE_TRANSACTION_LOG] Transaction log created for withdraw [{WithdrawId}]", withdraw.Id);
     }
 }

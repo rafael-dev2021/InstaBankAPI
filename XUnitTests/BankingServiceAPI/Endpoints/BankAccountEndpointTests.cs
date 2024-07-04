@@ -1,7 +1,9 @@
-﻿using BankingServiceAPI.Dto.Request;
+﻿using System.Security.Claims;
+using BankingServiceAPI.Dto.Request;
 using BankingServiceAPI.Dto.Response;
 using BankingServiceAPI.Endpoints;
 using BankingServiceAPI.Endpoints.Strategies;
+using BankingServiceAPI.Exceptions;
 using BankingServiceAPI.Models;
 using BankingServiceAPI.Services.Interfaces;
 using FluentValidation;
@@ -9,6 +11,7 @@ using FluentValidation.Results;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Caching.Distributed;
 using Moq;
 
 namespace XUnitTests.BankingServiceAPI.Endpoints;
@@ -17,24 +20,20 @@ public class BankAccountEndpointTests
 {
     private readonly Mock<IBankAccountDtoService> _bankAccountServiceMock = new();
     private readonly Mock<IValidator<BankAccountDtoRequest>> _bankAccountValidatorMock = new();
+    private readonly Mock<IDistributedCache> _cacheMock = new();
 
     [Fact]
-    public async Task GetAccounts_ShouldReturnOk_WhenSuccessful()
+    public async Task GetBankAccounts_ShouldReturnOk_WhenSuccessful()
     {
         // Arrange
-        var userDtoResponse = new UserDtoResponse(
-            "123ds43d4",
-            "John Doe",
-            "john.doe@example.com",
-            "123.545.899-10",
-            "test@localhost.com",
-            "+5540028922",
-            "User");
-
         var response = new List<BankAccountDtoResponse>
         {
-            new(1, 123, 100m, 123, "Savings", userDtoResponse),
-            new(2, 123, 100m, 123, "Savings", userDtoResponse)
+            new(1, 123, 100m, 123, "Savings",
+                new UserDtoResponse("123ds43d4", "John Doe", "john.doe@example.com", "123.545.899-10",
+                    "test@localhost.com", "+5540028922", "User")),
+            new(2, 123, 100m, 123, "Savings",
+                new UserDtoResponse("123ds43d4", "John Doe", "john.doe@example.com", "123.545.899-10",
+                    "test@localhost.com", "+5540028922", "User"))
         };
 
         _bankAccountServiceMock.Setup(s => s.GetEntitiesDtoAsync())
@@ -47,7 +46,9 @@ public class BankAccountEndpointTests
         // Act
         var result = await BankAccountEndpointTestsHelper.InvokeGetEndpoint(
             _bankAccountServiceMock.Object,
-            async service => await service.GetEntitiesDtoAsync()
+            _cacheMock.Object,
+            async service => await service.GetEntitiesDtoAsync(),
+            "cached_bank_accounts_list"
         );
 
         // Assert
@@ -55,22 +56,17 @@ public class BankAccountEndpointTests
         Assert.Equal(response, okResult.Value);
     }
 
+
     [Fact]
-    public async Task GetAccountById_ShouldReturnOk_WhenSuccessful()
+    public async Task GetBankAccountById_ShouldReturnOk_WhenSuccessful()
     {
         // Arrange
-        var userDtoResponse = new UserDtoResponse(
-            "123ds43d4",
-            "John Doe",
-            "john.doe@example.com",
-            "123.545.899-10",
-            "test@localhost.com",
-            "+5540028922",
-            "User");
+        var response = new BankAccountDtoResponse(
+            1, 123, 100m, 123, "Savings",
+            new UserDtoResponse("123ds43d4", "John Doe", "john.doe@example.com", "123.545.899-10", "test@localhost.com",
+                "+5540028922", "User"));
 
-        var response = new BankAccountDtoResponse(1, 123, 100m, 123, "Savings", userDtoResponse);
-
-        _bankAccountServiceMock.Setup(s => s.GetEntityDtoByIdAsync(1))
+        _bankAccountServiceMock.Setup(s => s.GetEntityDtoByIdAsync(It.IsAny<int>()))
             .ReturnsAsync(response);
 
         var builder = WebApplication.CreateBuilder();
@@ -78,9 +74,11 @@ public class BankAccountEndpointTests
         app.MapBankAccountEndpoints();
 
         // Act
-        var result = await BankAccountEndpointTestsHelper.InvokeGetEndpoint(
+        var result = await BankAccountEndpointTestsHelper.InvokeGetByIdEndpoint(
             _bankAccountServiceMock.Object,
+            _cacheMock.Object,
             async (service, id) => (await service.GetEntityDtoByIdAsync(id))!,
+            "cached_bank_account_by_id",
             1
         );
 
@@ -90,89 +88,84 @@ public class BankAccountEndpointTests
     }
 
     [Fact]
-    public async Task CreateAccount_ShouldReturnCreated_WhenSuccessful()
+    public async Task PostBankAccount_ShouldReturnCreated_WhenSuccessful()
     {
         // Arrange
-        var bankAccountRequest = new BankAccountDtoRequest(100m, AccountType.Current);
+        var request = new BankAccountDtoRequest(123, AccountType.Savings);
+        var response = new BankAccountDtoResponse(1, 123, 100m, 123, "Savings",
+            new UserDtoResponse("123ds43d4", "John Doe", "john.doe@example.com", "123.545.899-10", "test@localhost.com",
+                "+5540028922", "User"));
 
-        var userDtoResponse = new UserDtoResponse(
-            "123ds43d4",
-            "John",
-            "Doe",
-            "123.545.899-10",
-            "john.doe@example.com",
-            "+5540028922",
-            "User"
-        );
+        _bankAccountServiceMock.Setup(s => s.AddEntityDtoAsync(request, It.IsAny<HttpContext>()))
+            .ReturnsAsync(response);
 
-        var bankAccountResponse = new BankAccountDtoResponse(
-            1,
-            123456,
-            1000m,
-            123,
-            "Current",
-            userDtoResponse
-        );
-
-        _bankAccountServiceMock.Setup(s => s.AddEntityDtoAsync(bankAccountRequest, It.IsAny<HttpContext>()))
-            .ReturnsAsync(bankAccountResponse);
-
-        _bankAccountValidatorMock.Setup(v => v.ValidateAsync(bankAccountRequest, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
+        var validationResult = new ValidationResult();
+        _bankAccountValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(validationResult);
 
         var builder = WebApplication.CreateBuilder();
         var app = builder.Build();
         app.MapBankAccountEndpoints();
 
+        var context = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, "User") }, "TestAuthType"))
+        };
+
         // Act
         var result = await BankAccountEndpointTestsHelper.InvokePostEndpoint(
             _bankAccountServiceMock.Object,
-            bankAccountRequest,
             _bankAccountValidatorMock.Object,
-            async (service, request, context) => await service.AddEntityDtoAsync(request, context),
-            StatusCodes.Status201Created
+            _cacheMock.Object,
+            async (service, req, ctx) => await service.AddEntityDtoAsync(req, ctx),
+            request,
+            context
         );
 
         // Assert
-        var createdResult = Assert.IsType<StatusCodeHttpResult>(result);
-        Assert.Equal(StatusCodes.Status201Created, createdResult.StatusCode);
+        var createdResult = Assert.IsType<Created<BankAccountDtoResponse>>(result);
+        Assert.Equal(response, createdResult.Value);
     }
 
     [Fact]
-    public async Task DeleteAccount_ShouldReturnOk_WhenSuccessful()
+    public async Task DeleteBankAccount_ShouldReturnOk_WhenSuccessful()
     {
         // Arrange
-        _bankAccountServiceMock.Setup(s =>
-                s.DeleteEntityDtoAsync(1))
+        _bankAccountServiceMock.Setup(s => s.DeleteEntityDtoAsync(It.IsAny<int>()))
             .Returns(Task.CompletedTask);
 
         var builder = WebApplication.CreateBuilder();
         var app = builder.Build();
         app.MapBankAccountEndpoints();
 
+        var context = new DefaultHttpContext();
+        context.User = new ClaimsPrincipal(new ClaimsIdentity(
+            new[] { new Claim(ClaimTypes.Name, "Admin"), new Claim(ClaimTypes.Role, "Admin") }, "TestAuthType"));
+
         // Act
         var result = await BankAccountEndpointTestsHelper.InvokeDeleteEndpoint(
             _bankAccountServiceMock.Object,
+            _cacheMock.Object,
             async (service, id) => await service.DeleteEntityDtoAsync(id),
-            1
+            1,
+            context
         );
 
         // Assert
-        var okResult = Assert.IsType<Ok>(result);
-        Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+        Assert.IsType<Ok>(result);
     }
-
 
     private static class BankAccountEndpointTestsHelper
     {
         public static async Task<IResult> InvokeGetEndpoint(
             IBankAccountDtoService service,
-            Func<IBankAccountDtoService, Task<object>> handler)
+            IDistributedCache cache,
+            Func<IBankAccountDtoService, Task<object>> handler,
+            string cacheKey)
         {
             try
             {
-                var response = await handler(service);
-                return Results.Ok(response);
+                return await BankAccountEndpoint.HandleCacheAsync(cache, cacheKey, () => handler(service));
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -180,15 +173,16 @@ public class BankAccountEndpointTests
             }
         }
 
-        public static async Task<IResult> InvokeGetEndpoint(
+        public static async Task<IResult> InvokeGetByIdEndpoint(
             IBankAccountDtoService service,
+            IDistributedCache cache,
             Func<IBankAccountDtoService, int?, Task<object>> handler,
-            int id)
+            string cacheKey,
+            int? id)
         {
             try
             {
-                var response = await handler(service, id);
-                return Results.Ok(response);
+                return await BankAccountEndpoint.HandleCacheAsync(cache, cacheKey + id, () => handler(service, id));
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -196,24 +190,26 @@ public class BankAccountEndpointTests
             }
         }
 
-        public static async Task<IResult> InvokePostEndpoint<T>(
+        public static async Task<IResult> InvokePostEndpoint(
             IBankAccountDtoService service,
-            T request,
-            IValidator<T> validator,
-            Func<IBankAccountDtoService, T, HttpContext, Task> handler,
-            int expectedStatusCode = StatusCodes.Status200OK) where T : class
+            IValidator<BankAccountDtoRequest> validator,
+            IDistributedCache cache,
+            Func<IBankAccountDtoService, BankAccountDtoRequest, HttpContext, Task<BankAccountDtoResponse>> handler,
+            BankAccountDtoRequest request,
+            HttpContext context)
         {
-            var validationResult = await validator.ValidateAsync(request);
-            if (!validationResult.IsValid)
-            {
-                return Results.ValidationProblem(validationResult.ToDictionary());
-            }
-
             try
             {
-                var context = new DefaultHttpContext();
-                await handler(service, request, context);
-                return Results.StatusCode(expectedStatusCode);
+                var validationResult = await validator.ValidateAsync(request);
+                if (!validationResult.IsValid)
+                {
+                    return Results.ValidationProblem(validationResult.ToDictionary());
+                }
+
+                await cache.RemoveAsync("cached_bank_accounts_list");
+
+                var response = await handler(service, request, context);
+                return Results.Created($"/v1/bank/accounts/{response.Id}", response);
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -223,17 +219,32 @@ public class BankAccountEndpointTests
 
         public static async Task<IResult> InvokeDeleteEndpoint(
             IBankAccountDtoService service,
+            IDistributedCache cache,
             Func<IBankAccountDtoService, int?, Task> handler,
-            int id)
+            int? id,
+            HttpContext context)
         {
             try
             {
+                var authResult = AuthenticationRules.CheckAdminRole(context);
+                if (authResult != null)
+                {
+                    return authResult;
+                }
+
+                await cache.RemoveAsync("cached_bank_accounts_list");
+                await cache.RemoveAsync("cached_bank_account_by_id" + id);
+
                 await handler(service, id);
                 return Results.Ok();
             }
             catch (UnauthorizedAccessException ex)
             {
                 return AuthenticationRules.HandleUnauthorizedAccessException(ex);
+            }
+            catch (GetIdNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message });
             }
         }
     }

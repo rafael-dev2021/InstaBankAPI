@@ -7,7 +7,6 @@ using BankingServiceAPI.Repositories.Interfaces;
 using BankingServiceAPI.Services;
 using BankingServiceAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace XUnitTests.BankingServiceAPI.Services;
@@ -23,12 +22,10 @@ public class BankAccountDtoServiceTests
     {
         _repositoryMock = new Mock<IBankAccountRepository>();
         _mapperMock = new Mock<IMapper>();
-        Mock<ILogger<BankAccountDtoService>> loggerMock = new();
         _userContextServiceMock = new Mock<IUserContextService>();
         _bankAccountDtoService = new BankAccountDtoService(
             _repositoryMock.Object,
             _mapperMock.Object,
-            loggerMock.Object,
             _userContextServiceMock.Object
         );
     }

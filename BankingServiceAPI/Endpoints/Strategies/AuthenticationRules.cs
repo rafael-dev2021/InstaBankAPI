@@ -2,16 +2,7 @@
 
 public static class AuthenticationRules
 {
-    public static IResult? CheckAuthenticationAndAuthorization(HttpContext context, bool requireAuthentication)
-    {
-        if (!requireAuthentication) return null;
-
-        if (context.User.Identity!.IsAuthenticated) return CheckAdminRole(context);
-        var errorResponse = new Dictionary<string, string> { { "Message", "User is not authenticated." } };
-        return Results.Json(errorResponse, statusCode: StatusCodes.Status401Unauthorized);
-    }
-
-    private static IResult? CheckAdminRole(HttpContext context)
+    public static IResult? CheckAdminRole(HttpContext context)
     {
         if (context.User.IsInRole("Admin")) return null;
 

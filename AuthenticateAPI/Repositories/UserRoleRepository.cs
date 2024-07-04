@@ -7,6 +7,9 @@ namespace AuthenticateAPI.Repositories;
 public class UserRoleRepository(RoleManager<IdentityRole> roleManager, UserManager<User> userManager)
     : IUserRoleRepository
 {
+    private const string Admin = "Admin";
+    private const string User = "User";
+
     public async Task CreateRoleIfNotExistsAsync(string roleName)
     {
         if (!await roleManager.RoleExistsAsync(roleName))
@@ -20,7 +23,8 @@ public class UserRoleRepository(RoleManager<IdentityRole> roleManager, UserManag
         }
     }
 
-    public async Task CreateUserIfNotExistsAsync(string email, string roleName)
+    public async Task CreateUserIfNotExistsAsync(string email, string roleName, string firstName, string lastName,
+        string cpf, string phoneNumber)
     {
         if (await userManager.FindByEmailAsync(email) == null)
         {
@@ -30,15 +34,15 @@ public class UserRoleRepository(RoleManager<IdentityRole> roleManager, UserManag
                 UserName = email,
                 NormalizedEmail = email.ToUpper(),
                 NormalizedUserName = email.ToUpper(),
-                PhoneNumber = "1140028922",
+                PhoneNumber = phoneNumber,
                 PhoneNumberConfirmed = true,
                 EmailConfirmed = true,
                 ConcurrencyStamp = Guid.NewGuid().ToString()
             };
 
-            user.SetName("Rafael");
-            user.SetLastName("Silva");
-            user.SetCpf("123.456.789-01");
+            user.SetName(firstName);
+            user.SetLastName(lastName);
+            user.SetCpf(cpf);
             user.SetRole(roleName);
 
             var result = await userManager.CreateAsync(user, "@Visual24k+");
@@ -51,13 +55,15 @@ public class UserRoleRepository(RoleManager<IdentityRole> roleManager, UserManag
 
     public async Task UserAsync()
     {
-        await CreateUserIfNotExistsAsync("admin@localhost.com","Admin");
-        await CreateUserIfNotExistsAsync("user@localhost.com","User");
+        await CreateUserIfNotExistsAsync("admin@localhost.com", Admin, Admin, Admin, "123.456.789-00",
+            "+5540028922");
+        await CreateUserIfNotExistsAsync("user@localhost.com", User, User, User, "987.654.321-01",
+            "+5540028923");
     }
 
     public async Task RoleAsync()
     {
-        await CreateRoleIfNotExistsAsync("Admin");
-        await CreateRoleIfNotExistsAsync("User");
+        await CreateRoleIfNotExistsAsync(Admin);
+        await CreateRoleIfNotExistsAsync(User);
     }
 }

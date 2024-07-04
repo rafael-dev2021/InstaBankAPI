@@ -3,6 +3,7 @@ using BankingServiceAPI.Endpoints.Strategies;
 using BankingServiceAPI.Services.Interfaces;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace BankingServiceAPI.Endpoints;
 
@@ -41,6 +42,7 @@ public static class TransferEndpoint
             [FromServices] ITransferDtoService service,
             [FromBody] T request,
             [FromServices] IValidator<T> validator,
+            [FromServices] IDistributedCache cache,
             HttpContext context) =>
         {
             var (errorResult, userId) = await RequestHandler.HandleRequestAsync(context, request, validator);
@@ -48,6 +50,8 @@ public static class TransferEndpoint
             {
                 return errorResult;
             }
+            
+            await cache.RemoveAsync("cached_bank_accounts_list");
 
             return await RequestHandler.HandleServiceCallAsync(async () =>
             {

@@ -4,7 +4,7 @@ using BankingServiceAPI.Exceptions;
 using BankingServiceAPI.Models;
 using BankingServiceAPI.Repositories.Interfaces;
 using BankingServiceAPI.Services;
-using Microsoft.Extensions.Logging;
+using BankingServiceAPI.Services.Interfaces;
 using Moq;
 
 namespace XUnitTests.BankingServiceAPI.Services;
@@ -13,7 +13,6 @@ public class WithdrawDtoServiceTests
 {
     private readonly Mock<IWithdrawRepository> _withdrawRepositoryMock;
     private readonly Mock<IBankTransactionRepository> _bankTransactionRepositoryMock;
-    private readonly Mock<ILogger<WithdrawDtoService>> _loggerMock;
     private readonly WithdrawDtoService _withdrawDtoService;
     private readonly Mock<IMapper> _mockMapper;
 
@@ -21,12 +20,12 @@ public class WithdrawDtoServiceTests
     {
         _withdrawRepositoryMock = new Mock<IWithdrawRepository>();
         _bankTransactionRepositoryMock = new Mock<IBankTransactionRepository>();
-        _loggerMock = new Mock<ILogger<WithdrawDtoService>>();
+        Mock<ITransactionLogService> transactionLogServiceMock = new();
         _mockMapper = new Mock<IMapper>();
         _withdrawDtoService = new WithdrawDtoService(
             _withdrawRepositoryMock.Object,
             _bankTransactionRepositoryMock.Object,
-            _loggerMock.Object,
+            transactionLogServiceMock.Object,
             _mockMapper.Object
         );
     }
@@ -90,17 +89,6 @@ public class WithdrawDtoServiceTests
         );
 
         Assert.Equal("Account not found.", exception.Message);
-        _loggerMock.Verify(
-            x => x.Log(
-                It.Is<LogLevel>(l => l == LogLevel.Warning),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) =>
-                    v.ToString()!.Contains("Account number 123456 not found for user 1")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-            ),
-            Times.Once
-        );
     }
 
     [Fact]
@@ -125,17 +113,6 @@ public class WithdrawDtoServiceTests
         );
 
         Assert.Equal("You are not authorized to perform this transaction.", exception.Message);
-        _loggerMock.Verify(
-            x => x.Log(
-                It.Is<LogLevel>(l => l == LogLevel.Warning),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) =>
-                    v.ToString()!.Contains("User 1 is not authorized to withdraw from account number 123456")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()!
-            ),
-            Times.Once
-        );
     }
 
     [Fact]
