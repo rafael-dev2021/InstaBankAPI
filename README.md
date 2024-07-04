@@ -36,7 +36,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/rafael-dev2021/InstaBankAPI">
-    <img src="logo.png" alt="Logo" width="80" height="80">
+    <img src=".github/images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
 <h3 align="center">InstaBankAPI</h3>
@@ -265,7 +265,7 @@ Email to contact:
 [linkedin-url]: https://www.linkedin.com/in/rafael-s-a79314207/
 [youtube-shield]: https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white
 [youtube-url]: https://www.youtube.com/channel/UC9A-6w3A_GRs5rp8ct_1OlA
-[product-screenshot]: screenshot.png
+[product-screenshot]: .github/images/screenshot.png
 [Csharp.io]: https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white
 [Csharp-url]: https://learn.microsoft.com/pt-br/dotnet/csharp/
 [Dotnet.io]: https://img.shields.io/badge/.NET-512BD4?style=for-the-badge&logo=dotnet&logoColor=white
