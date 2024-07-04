@@ -179,7 +179,7 @@ public class UserRoleRepositoryTests
                 user.UserName == userEmail &&
                 user.NormalizedEmail!.Equals(userEmail, StringComparison.CurrentCultureIgnoreCase) &&
                 user.NormalizedUserName!.Equals(userEmail, StringComparison.CurrentCultureIgnoreCase) &&
-                user.PhoneNumber == "+5540028921" &&
+                user.PhoneNumber == "+5540028923" &&
                 user.PhoneNumberConfirmed &&
                 user.EmailConfirmed), "@Visual24k+"), Times.Once);
             _userManagerMock.Verify(um => um.AddToRoleAsync(It.IsAny<User>(), roleName), Times.Once);
